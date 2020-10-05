@@ -1,6 +1,7 @@
 import argparse
 import random
 from collections import deque
+from copy import deepcopy
 from typing import List
 
 import gym
@@ -53,15 +54,18 @@ class DQN(nn.Module):
 
 class DQNAgent:
     def __init__(self, action_size, hidden_sizes, memory_capacity=2000, epsilon=1,
-                 discount_factor=0.8, learning_rate=1e-3):
+                 discount_factor=0.8, learning_rate=1e-3, use_target_net=False, update_target_freq=10000):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.action_size = action_size
         self.memory = ReplayMemory(memory_capacity)
         self.discount_factor = discount_factor  # discount rate
         self.epsilon = epsilon                  # exploration rate
         self.Q_model = DQN(hidden_sizes=hidden_sizes, device=self.device)
+        self.Q_model_target = deepcopy(self.Q_model)
         self.optimizer = Adam(self.Q_model.parameters(), lr=learning_rate)
         self.max_q_val = torch.tensor(0.0).to(self.device)
+        self.use_target_net = use_target_net
+        self.update_target_freq = update_target_freq
 
     def memorize(self, state, action, reward, next_state, done):
         state       = torch.from_numpy(state).float().to(self.device)
@@ -95,10 +99,13 @@ class DQNAgent:
         return self.max_q_val
 
     def compute_targets(self, batch_size, rewards, next_states, dones):
+        target_model = self.Q_model_target if self.use_target_net else self.Q_model
+
         next_states = next_states.view(batch_size, -1)
 
-        Q_values = self.Q_model(next_states).max(dim=1, keepdim=True)[0]
+        Q_values = target_model(next_states).max(dim=1, keepdim=True)[0]
         Q_values.masked_fill_(dones, 0)
+
         return rewards + self.discount_factor * Q_values
 
     def train(self, batch_size, sample_memory=False):
@@ -132,6 +139,10 @@ class DQNAgent:
 
         return loss.item()
 
+    def update_target_network(self, global_updates):
+        if self.use_target_net and global_updates % self.update_target_freq == 0:
+            self.Q_model_target = deepcopy(self.Q_model)
+
     def load_checkpoint(self, name):
         self.Q_model = torch.load(name, map_location=self.device)
 
@@ -155,6 +166,8 @@ if __name__ == "__main__":
     parser.add_argument('--epsilon', default=1.0, type=float, help='the change ot picking a random action')
     parser.add_argument('--discount_factor', default=0.8, type=float, help='how much to discount future rewards')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate of DQN')
+    parser.add_argument('--use_target_net', default=True, type=bool, help='whether to use target network')
+    parser.add_argument('--update_target_freq', default=10000, type=int, help='how frequently to update target net')
 
     args = parser.parse_args()
 
@@ -169,7 +182,9 @@ if __name__ == "__main__":
                      hidden_sizes=[state_size, *args.hidden_sizes, action_size],
                      epsilon=args.epsilon,
                      discount_factor=args.discount_factor,
-                     learning_rate=args.lr)
+                     learning_rate=args.lr,
+                     use_target_net=args.use_target_net,
+                     update_target_freq=args.update_target_freq)
     print(agent.Q_model)
 
     batch_size = args.batch_size
@@ -201,4 +216,5 @@ if __name__ == "__main__":
 
             if len(agent.memory) > batch_size:
                 agent.train(batch_size, sample_memory=args.sample_memory)
+                agent.update_target_network(global_steps)
                 global_steps += 1
