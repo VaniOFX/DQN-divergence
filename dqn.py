@@ -13,6 +13,7 @@ from torch.optim import Adam
 
 def linear_epsilon_anneal(it):
     return max(1 - (it * 0.95/1000), 0.05)
+    return max(1 - (it * 0.95/100000), 0.05)
 
 
 class ReplayMemory:
@@ -36,7 +37,7 @@ class ReplayMemory:
 
 class DQN(nn.Module):
 
-    def __init__(self, hidden_sizes):
+    def __init__(self, hidden_sizes, device):
         super(DQN, self).__init__()
         model = nn.ModuleList()
 
@@ -44,7 +45,7 @@ class DQN(nn.Module):
             model.extend([nn.Linear(*size_tuple), nn.ReLU()])
 
         model.append(nn.Linear(hidden_sizes[-2], hidden_sizes[-1]))
-        self.model = nn.Sequential(*model)
+        self.model = nn.Sequential(*model).to(device)
 
     def forward(self, input):
         return self.model(input)
@@ -58,10 +59,17 @@ class DQNAgent:
         self.memory = ReplayMemory(memory_capacity)
         self.discount_factor = discount_factor  # discount rate
         self.epsilon = epsilon                  # exploration rate
-        self.Q_model = DQN(hidden_sizes=hidden_sizes)
+        self.Q_model = DQN(hidden_sizes=hidden_sizes, device=self.device)
         self.optimizer = Adam(self.Q_model.parameters(), lr=learning_rate)
+        self.max_q_val = torch.tensor(0.0).to(self.device)
 
     def memorize(self, state, action, reward, next_state, done):
+        state       = torch.from_numpy(state).float().to(self.device)
+        action      = torch.tensor(action, dtype=torch.int64).to(self.device)
+        reward      = torch.tensor(reward, dtype=torch.float).to(self.device)
+        next_state  = torch.from_numpy(next_state).float().to(self.device)
+        done        = torch.tensor(done, dtype=torch.bool).to(self.device)
+
         self.memory.push((state, action, reward, next_state, done))
 
     def set_epsilon(self, epsilon):
@@ -72,14 +80,23 @@ class DQNAgent:
             return random.randrange(self.action_size)
 
         with torch.no_grad():
-            state = torch.tensor(state).unsqueeze(0).float()
+            state = torch.from_numpy(state).float().to(self.device).unsqueeze(0)
             return self.Q_model(state)[0].argmax().item()
 
     def compute_q_vals(self, states, actions):
         Q_values = self.Q_model(states)
-        return torch.gather(Q_values, 1, actions)
+        result = torch.gather(Q_values, 1, actions)
 
-    def compute_targets(self, rewards, next_states, dones):
+        self.max_q_val = torch.max(self.max_q_val, result.abs().max())
+
+        return result
+
+    def get_max_q_val(self):
+        return self.max_q_val
+
+    def compute_targets(self, batch_size, rewards, next_states, dones):
+        next_states = next_states.view(batch_size, -1)
+
         Q_values = self.Q_model(next_states).max(dim=1, keepdim=True)[0]
         Q_values.masked_fill_(dones, 0)
         return rewards + self.discount_factor * Q_values
@@ -90,15 +107,22 @@ class DQNAgent:
 
         states, actions, rewards, next_states, dones = zip(*transitions)
 
-        states = torch.tensor(states, dtype=torch.float)
-        actions = torch.tensor(actions, dtype=torch.int64)[:, None]  # Need 64 bit to use them as index
-        next_states = torch.tensor(next_states, dtype=torch.float)
-        rewards = torch.tensor(rewards, dtype=torch.float)[:, None]
-        dones = torch.tensor(dones, dtype=torch.bool)[:, None]  # Boolean
+        states = torch.stack(states)
+        actions = torch.stack(actions)[:, None]  # Need 64 bit to use them as index
+        next_states = torch.stack(next_states)
+        rewards = torch.stack(rewards)[:, None]
+        dones = torch.stack(dones)[:, None]  # Boolean
+
+        # combine dimensions in case of multi-dim input (except batch dim)
+        states = states.view(batch_size, -1)
+
+        # clipping of rewards
+        rewards[rewards > 1.0] = 1.0
+        rewards[rewards < -1.0] = -1.0
 
         q_val = self.compute_q_vals(states, actions)
         with torch.no_grad():  # Don't compute gradient info for the target (semi-gradient)
-            target = self.compute_targets(rewards, next_states, dones)
+            target = self.compute_targets(batch_size, rewards, next_states, dones)
 
         loss = F.smooth_l1_loss(q_val, target)
 
@@ -116,6 +140,12 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
+    # and it's still not reproducible...
+    random_seed = 42
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', default="CartPole-v1", type=str, help='the environment to run experiments on')
     parser.add_argument('--batch_size', default=32, type=int, help='the batch size of DQN')
@@ -129,9 +159,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     env = gym.envs.make(args.env)
+
     print(f"Training on '{args.env}'")
 
-    state_size = env.observation_space.shape[0]
+    state_size = np.prod(env.observation_space.shape)
     action_size = env.action_space.n
 
     agent = DQNAgent(action_size=action_size,
@@ -160,7 +191,11 @@ if __name__ == "__main__":
             if done:
                 average_steps.append(steps)
                 if episode % 20 == 0:
-                    print(f"Episode: {episode}/{args.num_episodes}\t\t Score: {np.mean(average_steps):.1f}\t\t Epsilon: {agent.epsilon:.2f}")
+                # if episode % 1 == 0:
+                    print(f"Episode: {episode:05d}/{args.num_episodes:05d}\t\t "
+                          f"Score: {np.mean(average_steps):.1f}\t\t "
+                          f"Max-|Q|: {agent.get_max_q_val():.1f}\t\t "
+                          f"Epsilon: {agent.epsilon:.2f}")
                     average_steps = []
                 break
 
