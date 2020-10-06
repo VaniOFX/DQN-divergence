@@ -18,3 +18,4 @@ dependencies:
   - pip=19.3
   - pip:
     - gym==0.10.8
+    - hydra-core==1.0.0
