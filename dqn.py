@@ -1,8 +1,11 @@
-import argparse
+import logging
 import random
 from collections import deque
+from dataclasses import dataclass, field
 from copy import deepcopy
 from typing import List
+import hydra
+from hydra.core.config_store import ConfigStore
 
 import gym
 import numpy as np
@@ -150,48 +153,53 @@ class DQNAgent:
         torch.save(self.Q_model, name)
 
 
-if __name__ == "__main__":
+@dataclass
+class RLConfig:
+    seed: int = field(default=42, metadata="random seed for the environments")
+    env: str = field(default="CartPole-v1", metadata="the environment to run experiments on")
+    batch_size: int = field(default=32, metadata="the batch size of to train DQN")
+    sample_memory: bool =field(default=True, metadata="whether to use memory replay or correlated samples")
+    hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
+    num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
+    epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
+    discount_factor: float =field(default=0.8, metadata="discount over future rewards")
+    lr: float = field(default=1e-3, metadata="learning rate to train DQN")
+    use_target_net: bool = field(default=True, metadata="whether to use target network")
+    update_target_freq: int = field(default=10000, metadata="frequency of updating the target net")
+
+
+# Registering RLConfig class to enable duck typing
+cs = ConfigStore.instance()
+cs.store(name="config", node=RLConfig)
+log = logging.getLogger(__name__)
+
+@hydra.main(config_name="config")
+def main(config: RLConfig) -> None:
     # and it's still not reproducible...
-    random_seed = 42
-    random.seed(random_seed)
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
+    random.seed(config.seed)
+    np.random.seed(config.seed)
+    torch.manual_seed(config.seed)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--env', default="CartPole-v1", type=str, help='the environment to run experiments on')
-    parser.add_argument('--batch_size', default=32, type=int, help='the batch size of DQN')
-    parser.add_argument('--sample_memory', default=True, type=bool, help='whether to use memory replay or correlated samples')
-    parser.add_argument('--hidden_sizes', default=[128], type=List[int], help='size of DQN hidden layers')
-    parser.add_argument('--num_episodes', default=200, type=int, help='number of episodes to run DQN')
-    parser.add_argument('--epsilon', default=1.0, type=float, help='the change ot picking a random action')
-    parser.add_argument('--discount_factor', default=0.8, type=float, help='how much to discount future rewards')
-    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate of DQN')
-    parser.add_argument('--use_target_net', default=True, type=bool, help='whether to use target network')
-    parser.add_argument('--update_target_freq', default=10000, type=int, help='how frequently to update target net')
-
-    args = parser.parse_args()
-
-    env = gym.envs.make(args.env)
-
-    print(f"Training on '{args.env}'")
+    env = gym.envs.make(config.env)
+    log.info(f"Training on '{config.env}'")
 
     state_size = np.prod(env.observation_space.shape)
     action_size = env.action_space.n
 
     agent = DQNAgent(action_size=action_size,
-                     hidden_sizes=[state_size, *args.hidden_sizes, action_size],
-                     epsilon=args.epsilon,
-                     discount_factor=args.discount_factor,
-                     learning_rate=args.lr,
-                     use_target_net=args.use_target_net,
-                     update_target_freq=args.update_target_freq)
-    print(agent.Q_model)
+                     hidden_sizes=[state_size, *config.hidden_sizes, action_size],
+                     epsilon=config.epsilon,
+                     discount_factor=config.discount_factor,
+                     learning_rate=config.lr,
+                     use_target_net=config.use_target_net,
+                     update_target_freq=config.update_target_freq)
+    log.info(agent.Q_model)
 
-    batch_size = args.batch_size
+    batch_size = config.batch_size
     global_steps = 0
     average_steps = []
 
-    for episode in range(args.num_episodes):
+    for episode in range(config.num_episodes):
         state = env.reset()
 
         steps = 0
@@ -207,14 +215,17 @@ if __name__ == "__main__":
                 average_steps.append(steps)
                 if episode % 20 == 0:
                 # if episode % 1 == 0:
-                    print(f"Episode: {episode:05d}/{args.num_episodes:05d}\t\t "
-                          f"Score: {np.mean(average_steps):.1f}\t\t "
-                          f"Max-|Q|: {agent.get_max_q_val():.1f}\t\t "
-                          f"Epsilon: {agent.epsilon:.2f}")
+                    log.info(f"Episode: {episode:05d}/{config.num_episodes:05d}\t\t "
+                             f"Score: {np.mean(average_steps):.1f}\t\t "
+                             f"Max-|Q|: {agent.get_max_q_val():.1f}\t\t "
+                             f"Epsilon: {agent.epsilon:.2f}")
                     average_steps = []
                 break
 
             if len(agent.memory) > batch_size:
-                agent.train(batch_size, sample_memory=args.sample_memory)
+                agent.train(batch_size, sample_memory=config.sample_memory)
                 agent.update_target_network(global_steps)
                 global_steps += 1
+
+if __name__ == "__main__":
+    main()
