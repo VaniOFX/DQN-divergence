@@ -185,6 +185,7 @@ def main(config: RLConfig) -> None:
     torch.manual_seed(config.seed)
 
     env = gym.envs.make(config.env)
+    env.seed(config.seed)
     log.info(f"Training on '{config.env}'")
 
     state_size = np.prod(env.observation_space.shape)
