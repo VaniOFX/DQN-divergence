@@ -1,5 +1,6 @@
-import logging
+import os
 import random
+import logging
 from collections import deque
 from dataclasses import dataclass, field
 from copy import deepcopy
@@ -175,6 +176,9 @@ log = logging.getLogger(__name__)
 
 @hydra.main(config_name="config")
 def main(config: RLConfig) -> None:
+    """ Runs a training experiment based on the given hydra configuration """
+
+    print(f"Launched! Experiment logs available at {os.getcwd()}.")
     # and it's still not reproducible...
     random.seed(config.seed)
     np.random.seed(config.seed)
