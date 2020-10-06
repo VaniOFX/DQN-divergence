@@ -163,7 +163,7 @@ class RLConfig:
     hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
     num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
     epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
-    discount_factor: float =field(default=0.8, metadata="discount over future rewards")
+    discount_factor: float =field(default=0.99, metadata="discount over future rewards")
     lr: float = field(default=1e-3, metadata="learning rate to train DQN")
     use_target_net: bool = field(default=True, metadata="whether to use target network")
     update_target_freq: int = field(default=10000, metadata="frequency of updating the target net")
@@ -202,6 +202,8 @@ def main(config: RLConfig) -> None:
     batch_size = config.batch_size
     global_steps = 0
     average_steps = []
+    rewards = []
+    episode_reward = 0
 
     for episode in range(config.num_episodes):
         state = env.reset()
@@ -212,18 +214,25 @@ def main(config: RLConfig) -> None:
             action = agent.sample_action(state)
             next_state, reward, done, _ = env.step(action)
             agent.memorize(state, action, reward, next_state, done)
+            episode_reward += reward * (config.discount_factor**steps)
             state = next_state
             steps += 1
 
             if done:
                 average_steps.append(steps)
-                if episode % 20 == 0:
+                rewards.append(episode_reward)
+
+                if (episode + 1) % 20 == 0:
                 # if episode % 1 == 0:
-                    log.info(f"Episode: {episode:05d}/{config.num_episodes:05d}\t\t "
-                             f"Score: {np.mean(average_steps):.1f}\t\t "
-                             f"Max-|Q|: {agent.get_max_q_val():.1f}\t\t "
+                    log.info(f"Episode: {episode + 1:05d}/{config.num_episodes:05d}\t\t "
+                             f"#Steps: {np.mean(average_steps):7.1f}\t\t "
+                             f"Reward: {np.sum(rewards):7.1f}\t\t "
+                             f"Max-|Q|: {agent.get_max_q_val():7.1f}\t\t "
                              f"Epsilon: {agent.epsilon:.2f}")
+
+                    episode_reward = 0
                     average_steps = []
+                    rewards = []
                 break
 
             if len(agent.memory) > batch_size:
