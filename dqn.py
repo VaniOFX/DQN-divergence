@@ -160,7 +160,7 @@ class DQNAgent:
             target = self.compute_targets(batch_size, rewards, next_states, dones)
 
         # loss = F.smooth_l1_loss(q_val, target)
-        loss = F.l1_loss(q_val, target, reduction='none')
+        loss = F.mse_loss(q_val, target, reduction='none')
         loss = loss.clamp(-1.0, 1.0).mean()
 
         self.optimizer.zero_grad()
@@ -189,6 +189,7 @@ class RLConfig:
     memory_capacity: int =field(default=1000000, metadata='Memory capacity for experience replay')
     hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
     num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
+    episode_printing: int = field(default=20, metadata="how often to print stats")
     epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
     discount_factor: float =field(default=0.99, metadata="discount over future rewards")
     exploration_steps: int =field(default=1500, metadata='Number of steps before the eps-greedy policy reaches its optima')
@@ -255,16 +256,15 @@ def main(config: RLConfig) -> None:
             if done:
                 average_steps.append(steps)
                 rewards.append(episode_reward)
+                episode_reward = 0
 
-                if (episode + 1) % 20 == 0:
-                # if episode % 1 == 0:
-                    log.info(f"Episode: {episode + 1:5d}/{config.num_episodes:5d}\t\t "
-                             f"#Steps: {np.mean(average_steps):7.1f}\t\t "
-                             f"Reward: {np.sum(rewards):7.1f}\t\t "
-                             f"Max-|Q|: {agent.get_max_q_val():7.1f}\t\t "
+                if (episode + 1) % config.episode_printing == 0:
+                    log.info(f"Episode: {episode + 1:5d}/{config.num_episodes:5d}\t "
+                             f"Avg-#Steps: {np.mean(average_steps):7.1f}\t "
+                             f"Avg-Episode-Reward: {np.mean(rewards):7.1f}\t "
+                             f"Max-|Q|: {agent.get_max_q_val():7.1f}\t "
                              f"Epsilon: {agent.epsilon:.2f}")
 
-                    episode_reward = 0
                     average_steps = []
                     rewards = []
                     agent.clear_max_q_val()
