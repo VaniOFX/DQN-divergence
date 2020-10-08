@@ -1,6 +1,8 @@
 import os
 import random
 import logging
+import pandas as pd
+from pathlib import Path
 from collections import deque
 from dataclasses import dataclass, field
 from copy import deepcopy
@@ -189,7 +191,6 @@ class RLConfig:
     memory_capacity: int =field(default=1000000, metadata='Memory capacity for experience replay')
     hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
     num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
-    episode_printing: int = field(default=20, metadata="how often to print stats")
     epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
     discount_factor: float =field(default=0.99, metadata="discount over future rewards")
     exploration_steps: int =field(default=1500, metadata='Number of steps before the eps-greedy policy reaches its optima')
@@ -197,6 +198,7 @@ class RLConfig:
     lr: float = field(default=1e-3, metadata="learning rate to train DQN")
     use_target_net: bool = field(default=True, metadata="whether to use target network")
     update_target_freq: int = field(default=10000, metadata="frequency of updating the target net")
+    log_freq: int = field(default=20, metadata="frequency of logging metrics")
 
 
 # Registering RLConfig class to enable duck typing
@@ -208,7 +210,8 @@ log = logging.getLogger(__name__)
 def main(config: RLConfig) -> None:
     """ Runs a training experiment based on the given hydra configuration """
 
-    print(f"Launched! Experiment logs available at {os.getcwd()}.")
+    exp_dir = Path(os.getcwd())
+    print(f"Launched! Experiment logs available at exp_dir.")
     # and it's still not reproducible...
     random.seed(config.seed)
     np.random.seed(config.seed)
@@ -232,9 +235,15 @@ def main(config: RLConfig) -> None:
                      update_target_freq=config.update_target_freq)
     log.info(agent.Q_model)
 
-    batch_size = config.batch_size
     global_steps = 0
     average_steps = []
+
+    episodes = []
+    total_steps = []
+    max_q_values = []
+    epsilons = []
+    interactions = []
+
     rewards = []
     episode_reward = 0
 
@@ -249,16 +258,25 @@ def main(config: RLConfig) -> None:
             action = agent.sample_action(state)
             next_state, reward, done, _ = env.step(action)
             agent.memorize(state, action, reward, next_state, done)
+
+            interactions.append([state, action, reward, next_state, done])
+            
             episode_reward += reward * (config.discount_factor**steps)
+            
             state = next_state
             steps += 1
 
             if done:
                 average_steps.append(steps)
+                episodes.append(episode)
+                total_steps.append(steps)
+                max_q_values.append(agent.get_max_q_val().item())
+                epsilons.append(agent.epsilon)
+        
                 rewards.append(episode_reward)
                 episode_reward = 0
-
-                if (episode + 1) % config.episode_printing == 0:
+            
+                if (episode + 1) % config.log_freq == 0:
                     log.info(f"Episode: {episode + 1:5d}/{config.num_episodes:5d}\t "
                              f"Avg-#Steps: {np.mean(average_steps):7.1f}\t "
                              f"Avg-Episode-Reward: {np.mean(rewards):7.1f}\t "
@@ -270,10 +288,24 @@ def main(config: RLConfig) -> None:
                     agent.clear_max_q_val()
                 break
 
-            if len(agent.memory) > batch_size:
-                agent.train(batch_size, sample_memory=config.sample_memory)
+            if len(agent.memory) > config.batch_size:
+                agent.train(config.batch_size, sample_memory=config.sample_memory)
                 agent.update_target_network(global_steps)
                 global_steps += 1
+
+    record_df = pd.DataFrame({
+        "episodes": episodes,
+        "total_steps": total_steps,
+        "max_q_values": max_q_values,
+        "epsilons": epsilons
+    })
+    interactions_df = pd.DataFrame(interactions,
+                                   columns=["state", "action", "reward", "next_state", "done"])
+    record_file = exp_dir / "exp_records.csv"
+    interactions_file = exp_dir / "interactions.csv"
+    record_df.to_csv(record_file)
+    interactions_df.to_csv(interactions_file)
+    log.info(f"Experiment records and environment interactions available directory {exp_dir}.")
 
 if __name__ == "__main__":
     main()
