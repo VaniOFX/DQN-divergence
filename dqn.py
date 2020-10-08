@@ -1,6 +1,8 @@
 import os
 import random
 import logging
+import pandas as pd
+from pathlib import Path
 from collections import deque
 from dataclasses import dataclass, field
 from copy import deepcopy
@@ -167,6 +169,7 @@ class RLConfig:
     lr: float = field(default=1e-3, metadata="learning rate to train DQN")
     use_target_net: bool = field(default=True, metadata="whether to use target network")
     update_target_freq: int = field(default=10000, metadata="frequency of updating the target net")
+    log_freq: int = field(default=20, metadata="frequency of logging metrics")
 
 
 # Registering RLConfig class to enable duck typing
@@ -178,7 +181,8 @@ log = logging.getLogger(__name__)
 def main(config: RLConfig) -> None:
     """ Runs a training experiment based on the given hydra configuration """
 
-    print(f"Launched! Experiment logs available at {os.getcwd()}.")
+    exp_dir = Path(os.getcwd())
+    print(f"Launched! Experiment logs available at exp_dir.")
     # and it's still not reproducible...
     random.seed(config.seed)
     np.random.seed(config.seed)
@@ -199,9 +203,12 @@ def main(config: RLConfig) -> None:
                      update_target_freq=config.update_target_freq)
     log.info(agent.Q_model)
 
-    batch_size = config.batch_size
     global_steps = 0
     average_steps = []
+    episodes = []
+    total_steps = []
+    max_q_values = []
+    epsilons = []
 
     for episode in range(config.num_episodes):
         state = env.reset()
@@ -217,8 +224,11 @@ def main(config: RLConfig) -> None:
 
             if done:
                 average_steps.append(steps)
-                if episode % 20 == 0:
-                # if episode % 1 == 0:
+                episodes.append(episode)
+                total_steps.append(steps)
+                max_q_values.append(agent.get_max_q_val().item())
+                epsilons.append(agent.epsilon)
+                if episode % config.log_freq == 0:
                     log.info(f"Episode: {episode:05d}/{config.num_episodes:05d}\t\t "
                              f"Score: {np.mean(average_steps):.1f}\t\t "
                              f"Max-|Q|: {agent.get_max_q_val():.1f}\t\t "
@@ -226,10 +236,20 @@ def main(config: RLConfig) -> None:
                     average_steps = []
                 break
 
-            if len(agent.memory) > batch_size:
-                agent.train(batch_size, sample_memory=config.sample_memory)
+            if len(agent.memory) > config.batch_size:
+                agent.train(config.batch_size, sample_memory=config.sample_memory)
                 agent.update_target_network(global_steps)
                 global_steps += 1
+
+    record_df = pd.DataFrame({
+        "episodes": episodes,
+        "total_steps": total_steps,
+        "max_q_values": max_q_values,
+        "epsilons": epsilons
+    })
+    record_file = exp_dir / "exp_records.csv"
+    record_df.to_csv(record_file)
+    log.info(f"Experiment records available at {record_file}.")
 
 if __name__ == "__main__":
     main()
