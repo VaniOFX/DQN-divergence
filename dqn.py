@@ -26,7 +26,7 @@ def linear_epsilon_anneal(it, exploration_steps):
     # NOTE: during evaluation, the authors of DQN changes this to 0.05 fixed (without exploration)
     lower_bound = 0.1
 
-    return max(1 - (it * (1.0-lower_bound)/exploration_steps), lower_bound)
+    return max(1 - (it * (1.0 - lower_bound) / exploration_steps), lower_bound)
 
 
 class ReplayMemory:
@@ -65,14 +65,15 @@ class DQN(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, action_size, hidden_sizes, memory_capacity=2000, epsilon=1,
+
+    def __init__(self, action_size, hidden_sizes, memory_capacity=2000, epsilon=1.0,
                  discount_factor=0.99, optimizer='Adam', learning_rate=1e-3,
                  use_target_net=False, update_target_freq=10000):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.action_size = action_size
         self.memory = ReplayMemory(memory_capacity)
         self.discount_factor = discount_factor  # discount rate
-        self.epsilon = epsilon                  # exploration rate
+        self.epsilon = epsilon  # exploration rate
         self.Q_model = DQN(hidden_sizes=hidden_sizes, device=self.device)
 
         self.Q_model_target = deepcopy(self.Q_model)
@@ -90,11 +91,11 @@ class DQNAgent:
         return cls(self.Q_model.parameters(), lr=learning_rate)
 
     def memorize(self, state, action, reward, next_state, done):
-        state       = torch.from_numpy(state).float().to(self.device)
-        action      = torch.tensor(action, dtype=torch.int64).to(self.device)
-        reward      = torch.tensor(reward, dtype=torch.float).to(self.device)
-        next_state  = torch.from_numpy(next_state).float().to(self.device)
-        done        = torch.tensor(done, dtype=torch.bool).to(self.device)
+        state = torch.from_numpy(state).float().to(self.device)
+        action = torch.tensor(action, dtype=torch.int64).to(self.device)
+        reward = torch.tensor(reward, dtype=torch.float).to(self.device)
+        next_state = torch.from_numpy(next_state).float().to(self.device)
+        done = torch.tensor(done, dtype=torch.bool).to(self.device)
 
         self.memory.push((state, action, reward, next_state, done))
 
@@ -140,7 +141,7 @@ class DQNAgent:
         # perhaps we can look into this?
         # see how it affects divergence?
 
-        transitions = self.memory.sample(batch_size) if sample_memory\
+        transitions = self.memory.sample(batch_size) if sample_memory \
             else self.memory.get_ordered_samples(batch_size)
 
         states, actions, rewards, next_states, dones = zip(*transitions)
@@ -187,14 +188,14 @@ class RLConfig:
     seed: int = field(default=42, metadata="random seed for the environments")
     env: str = field(default="CartPole-v1", metadata="the environment to run experiments on")
     batch_size: int = field(default=32, metadata="the batch size of to train DQN")
-    sample_memory: bool =field(default=True, metadata="whether to use memory replay or correlated samples")
-    memory_capacity: int =field(default=1000000, metadata='Memory capacity for experience replay')
+    sample_memory: bool = field(default=True, metadata="whether to use memory replay or correlated samples")
+    memory_capacity: int = field(default=1000000, metadata='Memory capacity for experience replay')
     hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
     num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
     epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
-    discount_factor: float =field(default=0.99, metadata="discount over future rewards")
-    exploration_steps: int =field(default=1500, metadata='Number of steps before the eps-greedy policy reaches its optima')
-    optimizer: str =field(default='Adam', metadata='Optimizer to use')
+    discount_factor: float = field(default=0.99, metadata="discount over future rewards")
+    exploration_steps: int = field(default=1500, metadata='Number of steps before the eps-greedy policy reaches its optima')
+    optimizer: str = field(default='Adam', metadata='Optimizer to use')
     lr: float = field(default=1e-3, metadata="learning rate to train DQN")
     use_target_net: bool = field(default=True, metadata="whether to use target network")
     update_target_freq: int = field(default=10000, metadata="frequency of updating the target net")
@@ -206,12 +207,13 @@ cs = ConfigStore.instance()
 cs.store(name="config", node=RLConfig)
 log = logging.getLogger(__name__)
 
+
 @hydra.main(config_name="config")
 def main(config: RLConfig) -> None:
     """ Runs a training experiment based on the given hydra configuration """
 
     exp_dir = Path(os.getcwd())
-    print(f"Launched! Experiment logs available at exp_dir.")
+    print(f"Launched! Experiment logs available at {exp_dir}.")
     # and it's still not reproducible...
     random.seed(config.seed)
     np.random.seed(config.seed)
@@ -260,9 +262,9 @@ def main(config: RLConfig) -> None:
             agent.memorize(state, action, reward, next_state, done)
 
             interactions.append([state, action, reward, next_state, done])
-            
-            episode_reward += reward * (config.discount_factor**steps)
-            
+
+            episode_reward += reward * (config.discount_factor ** steps)
+
             state = next_state
             steps += 1
 
@@ -272,10 +274,10 @@ def main(config: RLConfig) -> None:
                 total_steps.append(steps)
                 max_q_values.append(agent.get_max_q_val().item())
                 epsilons.append(agent.epsilon)
-        
+
                 rewards.append(episode_reward)
                 episode_reward = 0
-            
+
                 if (episode + 1) % config.log_freq == 0:
                     log.info(f"Episode: {episode + 1:5d}/{config.num_episodes:5d}\t "
                              f"Avg-#Steps: {np.mean(average_steps):7.1f}\t "
@@ -306,6 +308,7 @@ def main(config: RLConfig) -> None:
     record_df.to_csv(record_file)
     interactions_df.to_csv(interactions_file)
     log.info(f"Experiment records and environment interactions available directory {exp_dir}.")
+
 
 if __name__ == "__main__":
     main()
