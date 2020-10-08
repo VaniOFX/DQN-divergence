@@ -209,6 +209,7 @@ def main(config: RLConfig) -> None:
     total_steps = []
     max_q_values = []
     epsilons = []
+    interactions = []
 
     for episode in range(config.num_episodes):
         state = env.reset()
@@ -219,6 +220,7 @@ def main(config: RLConfig) -> None:
             action = agent.sample_action(state)
             next_state, reward, done, _ = env.step(action)
             agent.memorize(state, action, reward, next_state, done)
+            interactions.append([state, action, reward, next_state, done])
             state = next_state
             steps += 1
 
@@ -247,9 +249,13 @@ def main(config: RLConfig) -> None:
         "max_q_values": max_q_values,
         "epsilons": epsilons
     })
+    interactions_df = pd.DataFrame(interactions,
+                                   columns=["state", "action", "reward", "next_state", "done"])
     record_file = exp_dir / "exp_records.csv"
+    interactions_file = exp_dir / "interactions.csv"
     record_df.to_csv(record_file)
-    log.info(f"Experiment records available at {record_file}.")
+    interactions_df.to_csv(interactions_file)
+    log.info(f"Experiment records and environment interactions available directory {exp_dir}.")
 
 if __name__ == "__main__":
     main()
