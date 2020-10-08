@@ -2,5 +2,5 @@ hydra:
   run:
     dir: experiments/default_${hydra.job.override_dirname}
   sweep:
-    dir: hyper-parameter-sweep/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: experiments
     subdir: ${hydra.job.num}_${hydra.job.override_dirname}
