@@ -18,14 +18,12 @@ from torch import nn
 import torch.optim
 
 
-def linear_epsilon_anneal(it, exploration_steps):
+def linear_epsilon_anneal(it, exploration_steps, lower_bound=0.1):
     # the paper vary the epsilon linearly from 1.0 to 0.1
     # before reaching the lower bound of 0.1, they ran it for 1/50 million frames
     # also, they seem to run 50K steps with a completely random policy, before
     # moving a epsilon-greedy policy (with an initial eps of 1.0)
     # NOTE: during evaluation, the authors of DQN changes this to 0.05 fixed (without exploration)
-    lower_bound = 0.1
-
     return max(1 - (it * (1.0 - lower_bound) / exploration_steps), lower_bound)
 
 
@@ -193,8 +191,9 @@ class RLConfig:
     hidden_sizes: List[int] = field(default_factory=lambda: [128], metadata="list of hidden layer dimensions for DQN")
     num_episodes: int = field(default=200, metadata="number of episodes to run DQN for")
     epsilon: float = field(default=1.0, metadata="the change ot picking a random action")
+    epsilon_lower_bound: float = field(default=0.1, metadata="epsilon for epsilon-greedy policy decreases to this value at minimum")
     discount_factor: float = field(default=0.99, metadata="discount over future rewards")
-    exploration_steps: int = field(default=1500, metadata='Number of steps before the eps-greedy policy reaches its optima')
+    exploration_steps: int = field(default=400, metadata='Number of steps before the eps-greedy policy reaches its optima')
     optimizer: str = field(default='Adam', metadata='Optimizer to use')
     lr: float = field(default=1e-3, metadata="learning rate to train DQN")
     use_target_net: bool = field(default=True, metadata="whether to use target network")
@@ -255,7 +254,8 @@ def main(config: RLConfig) -> None:
         steps = 0
         while True:
             agent.set_epsilon(
-                linear_epsilon_anneal(global_steps, config.exploration_steps))
+                linear_epsilon_anneal(episode, config.exploration_steps)
+            )
 
             action = agent.sample_action(state)
             next_state, reward, done, _ = env.step(action)
