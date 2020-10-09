@@ -21,7 +21,7 @@ def get_experiment_setting(config):
         result = 'target'
     return result
 
-def load_experiment_results():
+def load_experiment_results(discount_factor=0.99):
     """
     Extract info from all experiments.
     
@@ -45,16 +45,21 @@ def load_experiment_results():
         environment = config.env
         experiment_setting = get_experiment_setting(config)
         
-        if environment not in result:
-            result[environment] = {}
-        if experiment_setting not in result[environment]:
-            result[environment][experiment_setting] = {}
-        if config not in result[environment][experiment_setting]:
-            result[environment][experiment_setting][config] = {}
-        # if same experiment and same seed, only use one of them and skip the rest
-        if seed not in result[environment][experiment_setting][config]:
-            df = pd.read_csv(experiment_dir / 'exp_records.csv', index_col=0)
-            result[environment][experiment_setting][config][seed] = df
+        if config.discount_factor == discount_factor:
+            if environment not in result:
+                result[environment] = {}
+            if experiment_setting not in result[environment]:
+                result[environment][experiment_setting] = {}
+            if config not in result[environment][experiment_setting]:
+                result[environment][experiment_setting][config] = {}
+            # if same experiment and same seed, only use one of them and skip the rest
+            if seed not in result[environment][experiment_setting][config]:
+                # some experiments may still be running, so exp_records not yet written
+                try:
+                    df = pd.read_csv(experiment_dir / 'exp_records.csv', index_col=0)
+                except FileNotFoundError:
+                    continue
+                result[environment][experiment_setting][config][seed] = df
     return result
 
 
