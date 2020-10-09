@@ -7,6 +7,7 @@ import yaml
 from omegaconf import DictConfig
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import argparse
 
 results_dir = Path('experiments')
 possible_experiment_settings = ('vanilla', 'memory', 'target', 'memory+target')
@@ -84,7 +85,7 @@ def get_max_q_values(results):
     return max_q_values
 
 
-def make_violinplots(q_vals, environment=None, figsize=(15,10), save_path=None):
+def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10), save_path=None):
     """
     Make violinplots similar to van Hassalt et al.
     
@@ -94,7 +95,9 @@ def make_violinplots(q_vals, environment=None, figsize=(15,10), save_path=None):
     """
     max_q_dfs = {}
     for env, vals in max_q_values.items():
-         max_q_dfs[env] = pd.DataFrame(vals)
+        # deal with irregular experiment lengths
+        max_q_dfs[env] = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in vals.items()]))
+        # max_q_dfs[env] = pd.DataFrame(vals)
 
     if environment is not None:
         df = max_q_dfs[environment]
@@ -103,15 +106,19 @@ def make_violinplots(q_vals, environment=None, figsize=(15,10), save_path=None):
         df = pd.concat([df for df in max_q_dfs.values()])
 
     df_melt = pd.melt(df)
+    # deal with irregular experiment lengths
+    df_melt = df_melt[~df_melt.value.isna()]
 
     fig, ax = plt.subplots(figsize=figsize)
     sns.violinplot(data=df_melt, x='variable', y='value', order=possible_experiment_settings, scale='count',
                    cut=0, inner='stick', ax=ax)
-    ax.axhline(100, linestyle='--', color='black', linewidth=3)
+    divergence_level = 1 / (1 - discount_factor)
+    ax.axhline(divergence_level, linestyle='--', color='black', linewidth=3)
     ax.set_xlabel(None)
     ax.set_ylabel('max abs Q', fontsize=20)
     ax.set_yscale('log')
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     ax.grid(axis='y')
     ax.tick_params(axis='x', labelsize=15)
     if save_path is not None:
@@ -119,6 +126,10 @@ def make_violinplots(q_vals, environment=None, figsize=(15,10), save_path=None):
 
 
 if __name__ == "__main__":
-    results = load_experiment_results()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.6, help='discount_factor to base plotting on')
+    args = parser.parse_args()
+
+    results = load_experiment_results(discount_factor=args.discount)
     max_q_values = get_max_q_values(results)
-    make_violinplots(max_q_values, save_path='violinplot.png')
+    make_violinplots(max_q_values, discount_factor=args.discount, save_path='violinplot.png')
