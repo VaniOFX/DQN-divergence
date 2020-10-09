@@ -131,4 +131,54 @@ where the last equality is a general result for geometric series. This means tha
 
 <!--- - goal of this blog post is to find out to what extent each of these techniques help to deal with divergence
 - if the networks diverge, we are most likely not learning anything meaningful.
-- Every 
+- Every state-action value is assumed to exist and be finite. If the algo doesn't converge, it means we are not in
+  a local or global optimum.
+- Defining divergence
+    - For most environments, we don't know the true Q-values. How do we know when divergence occurs then?
+    - intuition: if some state-action pairs get assigned unrealistically high values, we say there is **soft divergence**.
+    - when are values too high? Show discount_factor / max q value calculation.
+    - reward clipping -->
+
+## Experimental setup
+
+We are now able to quantify divergence, which gives us a straightforward way to compare different algorithms in terms of divergence. We run each setup X times, and report the fraction of runs at which soft divergence occurs. We set the amount of runs to ?? to ensure statistically significant results, while taking our computational budget into account.
+
+We try to make sure our experimental setup coincides with the DQN implementation as much as possible. Due to computational constraints, we unfortunately can't run any experiments on Atari games. Instead, we investigate the following simpler environments: Cart-Pole, Mountain Car, Inverse Pendulum, ... . We want enough environments such that we have divergence and convergence on each setup. 
+
+We use the following hyperparameter settings in all our experiments:
+- We use an epsilon-greedy exploration strategy, where epsilon is linearly annealed over ?? steps to 0.05, after which it stays at that level.
+- Learning rate $$\alpha = x$$
+- Adam optimizer
+- reward clipping to range [-1, 1]
+- gradient clipping to x
+- discount factor x
+
+<!--- - Evaluating the different techniques
+    - how we evaluate the techniques
+      - run each setup for X runs
+      - measure the fraction of times that soft divergence occurs
+      - we do this by tracking the max absolute q value. If this is larger than X, we say divergence occurs
+      - we do this for ? runs, because ??
+      - the less divergence occurs, the more we say a technique helps avoiding divergence
+    - explanation on environments
+        - we need to do many runs to get some statistically significant results
+        - we don't have the time and resources to investigate computationally expensive atari games
+        - therefore, we investigate environments that are relatively simple and computationally inexpensive
+        - we want enough environments such that we have divergence and convergence on each setup
+    - the following hyperparameters are important
+      - optimizer type
+      - learning rate
+      - discount factor
+      - reward clipping
+      - gradient clipping
+      - ...
+      - we try to stick to the original paper as much as possible -->
+
+## Results
+
+
+## Conclusions
+
+
+
+**Footnotes**
