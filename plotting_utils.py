@@ -128,8 +128,15 @@ def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10),
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.6, help='discount_factor to base plotting on')
+    parser.add_argument('--environment', metavar='training environment', type=str, default='cartpole', help='which environment for plots')
     args = parser.parse_args()
+
+    environment = None
+    try:
+        environment = args.environment
+    except AttributeError:
+        pass
 
     results = load_experiment_results(discount_factor=args.discount)
     max_q_values = get_max_q_values(results)
-    make_violinplots(max_q_values, discount_factor=args.discount, save_path='violinplot.png')
+    make_violinplots(max_q_values, discount_factor=args.discount, environment=environment, save_path='violinplot.png')
