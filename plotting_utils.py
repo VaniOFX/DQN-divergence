@@ -8,6 +8,7 @@ from omegaconf import DictConfig
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import argparse
+import re
 
 results_dir = Path('experiments')
 possible_experiment_settings = ('vanilla', 'memory', 'target', 'memory+target')
@@ -22,10 +23,12 @@ def get_experiment_setting(config):
         result = 'target'
     return result
 
-def load_experiment_results(discount_factor=0.99):
+def load_experiment_results(discount_factor=0.99, read_log=False):
     """
     Extract info from all experiments.
     
+    Filter runs with specified discount_factor.
+
     Returns a dictionary: result[environment][experiment_setting][config][seed] -> dataframe for 1 run
     """
     result = {}
@@ -55,37 +58,49 @@ def load_experiment_results(discount_factor=0.99):
                 result[environment][experiment_setting][config] = {}
             # if same experiment and same seed, only use one of them and skip the rest
             if seed not in result[environment][experiment_setting][config]:
-                # some experiments may still be running, so exp_records not yet written
-                try:
-                    df = pd.read_csv(experiment_dir / 'exp_records.csv', index_col=0)
-                except FileNotFoundError:
-                    continue
-                result[environment][experiment_setting][config][seed] = df
+                if not read_log:
+                    # some experiments may still be running, so exp_records not yet written
+                    try:
+                        data = pd.read_csv(experiment_dir / 'exp_records.csv', index_col=0)
+                    except FileNotFoundError:
+                        continue
+                else:
+                    log_file = experiment_dir / 'dqn.log'
+                    with open(log_file) as f:
+                        data = f.read()
+                result[environment][experiment_setting][config][seed] = data
+
     return result
 
+def extract_reward(log):
+    """Extract reward from log file."""
+    last_reward_line = log.split('\n')[-3]
+    return float(re.search('Avg-Episode-Reward:\s+(\S+)', last_reward_line).group(1))
 
-def get_max_q_values(results):
+def extract_max_q(results):
+    """Extract (latest) max q from pandas dataframe."""
+    return results.loc[results.index[-1], 'max_q_values']
+
+def iterate_results(results, extract_fn):
     """
-    Extract max q values from experiment results, which is output from `load_experiment_results`.
-    
-    Returns a dictionary: result[environment][experimential_setting] -> np array max q value for each run
+    Iterate experiment results and extract info using some extraction function.
     """
-    max_q_values = {}
+    outputs = {}
     for environment, environment_results in results.items():
-        if environment not in max_q_values:
-            max_q_values[environment] = {}
+        if environment not in outputs:
+            outputs[environment] = {}
         for experimental_setting, setting_results in environment_results.items():
-            max_q_values[environment][experimental_setting] = []
+            outputs[environment][experimental_setting] = []
             for config, seeds_results in setting_results.items():
                 for seed, actual_results in seeds_results.items():
-                    max_q_value = actual_results.loc[actual_results.index[-1], 'max_q_values']
-                    max_q_values[environment][experimental_setting].append(max_q_value)
-            max_q_values[environment][experimental_setting] = np.array(max_q_values[environment][experimental_setting])
-            
-    return max_q_values
+                    output = extract_fn(actual_results)
+                    outputs[environment][experimental_setting].append(output)
+            outputs[environment][experimental_setting] = np.array(outputs[environment][experimental_setting])
+    return outputs
 
 
-def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10), save_path=None):
+def make_violinplots(data, discount_factor=None, environment=None, figsize=(15,10),
+                     mode='q_divergence', save_path=None):
     """
     Make violinplots similar to van Hassalt et al.
     
@@ -93,17 +108,18 @@ def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10),
     
     If environment is not specified, merge all environments together for the plot.
     """
-    max_q_dfs = {}
-    for env, vals in max_q_values.items():
+    assert mode in ('q_divergence', 'reward')
+    data_dfs = {}
+    for env, vals in data.items():
         # deal with irregular experiment lengths
-        max_q_dfs[env] = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in vals.items()]))
+        data_dfs[env] = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in vals.items()]))
         # max_q_dfs[env] = pd.DataFrame(vals)
 
     if environment is not None:
-        df = max_q_dfs[environment]
+        df = data_dfs[environment]
     else:
         # merges all environments together
-        df = pd.concat([df for df in max_q_dfs.values()])
+        df = pd.concat([df for df in data_dfs.values()])
 
     df_melt = pd.melt(df)
     # deal with irregular experiment lengths
@@ -112,11 +128,15 @@ def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10),
     fig, ax = plt.subplots(figsize=figsize)
     sns.violinplot(data=df_melt, x='variable', y='value', order=possible_experiment_settings, scale='count',
                    cut=0, inner='stick', ax=ax)
-    divergence_level = 1 / (1 - discount_factor)
-    ax.axhline(divergence_level, linestyle='--', color='black', linewidth=3)
+    if mode == 'q_divergence':
+        divergence_level = 1 / (1 - discount_factor)
+        ax.axhline(divergence_level, linestyle='--', color='black', linewidth=3)
+        ax.set_yscale('log')
+        ylabel = 'max abs Q'
+    elif mode == 'reward':
+        ylabel = 'Final average reward'
     ax.set_xlabel(None)
-    ax.set_ylabel('max abs Q', fontsize=20)
-    ax.set_yscale('log')
+    ax.set_ylabel(ylabel, fontsize=20)
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     ax.grid(axis='y')
@@ -127,8 +147,9 @@ def make_violinplots(q_vals, discount_factor, environment=None, figsize=(15,10),
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.6, help='discount_factor to base plotting on')
-    parser.add_argument('--environment', metavar='training environment', type=str, default='cartpole', help='which environment for plots')
+    parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.99, help='discount_factor to base plotting on')
+    parser.add_argument('--reward', action='store_true', help='if specified, make plots for average reward')
+    parser.add_argument('--environment', metavar='training environment', type=str, default='MountainCar-v0', help='which environment for plots')
     args = parser.parse_args()
 
     environment = None
@@ -136,7 +157,15 @@ if __name__ == "__main__":
         environment = args.environment
     except AttributeError:
         pass
+    mode = 'reward' if args.reward else 'q_divergence'
+    if mode == 'reward':
+        read_log = True
+        extract_fn = extract_reward
+    else:
+        read_log = False
+        extract_fn = extract_max_q
 
-    results = load_experiment_results(discount_factor=args.discount)
-    max_q_values = get_max_q_values(results)
-    make_violinplots(max_q_values, discount_factor=args.discount, environment=environment, save_path='violinplot.png')
+    results = load_experiment_results(discount_factor=args.discount, read_log=read_log)
+    data = iterate_results(results, extract_fn=extract_fn)
+    make_violinplots(data, discount_factor=args.discount, mode=mode, environment=environment,
+                     save_path=f'violinplot_{mode}_{args.environment}_{args.discount}.png')
