@@ -237,7 +237,7 @@ it caused less optimal parameters to be learned.
 Combining the two tricks gave us the best results.
 
 We also looked at the effects of clipping the error term during training, and
-understood that netither of tricks is useful without the clipping.
+understood that netither of tricks is useful without the clipping in the simple environments we tested.
 
 
 **Footnotes**
