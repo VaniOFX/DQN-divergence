@@ -161,8 +161,8 @@ class DQNAgent:
             target = self.compute_targets(batch_size, rewards, next_states, dones)
 
         # loss = F.smooth_l1_loss(q_val, target)
-        loss = F.mse_loss(q_val, target)#, reduction='none')
-        # loss = loss.clamp(-1.0, 1.0).mean()
+        loss = F.mse_loss(q_val, target, reduction='none')
+        loss = loss.clamp(-1.0, 1.0).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
