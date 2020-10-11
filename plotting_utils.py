@@ -148,7 +148,7 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(15,1
     if save_path is not None:
         plt.savefig(save_path)
 
-def plot_q_values(data, figsize=(15,10), save_path=None):
+def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
     """
     Plot the maximum Q values over the episodes
 
@@ -164,6 +164,7 @@ def plot_q_values(data, figsize=(15,10), save_path=None):
         episode_indexes = range(len(mean_q_values))
         ax.plot(episode_indexes, mean_q_values, label=exp_setting)
         ax.fill_between(episode_indexes, upper_band, lower_band, alpha=0.3)
+    ax.axhline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=3)
     ax.set_xlabel("Episodes")
     ax.set_ylabel("Maximum Q Values")
     plt.legend()
@@ -190,7 +191,7 @@ if __name__ == "__main__":
     if args.q_values:
         results = load_experiment_results(discount_factor=args.discount)
         q_values_df = iterate_results(results, extract_fn=extract_q_values)
-        plot_q_values(q_values_df[environment], save_path=f"{environment}_q_values.png")
+        plot_q_values(q_values_df[environment], discount_factor=args.discount, save_path=f"{environment}_q_values.png")
     else:
         mode = 'reward' if args.reward else 'q_divergence'
         if mode == 'reward':
