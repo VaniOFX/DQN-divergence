@@ -164,9 +164,10 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
         episode_indexes = range(len(mean_q_values))
         ax.plot(episode_indexes, mean_q_values, label=exp_setting)
         ax.fill_between(episode_indexes, upper_band, lower_band, alpha=0.3)
+        ax.set_yscale("log")
     ax.axhline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=3)
     ax.set_xlabel("Episodes")
-    ax.set_ylabel("Maximum Q Values")
+    ax.set_ylabel("Maximum Q Values (log scale)")
     plt.legend()
     if save_path:
         fig.savefig(save_path)
