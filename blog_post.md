@@ -185,7 +185,7 @@ Our results for MountainCar and Acrobot are shown below
 ![MountainCar divergence](./img/violinplot_q_divergence_MountainCar-v0_0.99.png)
 ![Acrobot divergence](./img/violinplot_q_divergence_Acrobot-v0_0.99.png)
 
-On the y-axis we see a the $$\max |Q|$$ on a logarithmic scale.
+On the y-axis we see the $$\max |Q|$$ on a logarithmic scale.
 The dashed line represents our theoretical maximal $$|Q|$$, above which we deem
 the network to have diverged.
 We see that with these environments, memory sampling has a limited effect on
