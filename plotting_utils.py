@@ -81,6 +81,10 @@ def extract_max_q(results):
     """Extract (latest) max q from pandas dataframe."""
     return results.loc[results.index[-1], 'max_q_values']
 
+def extract_q_values(results):
+    """Extract all the max q values"""
+    return results['max_q_values'].tolist()
+
 def iterate_results(results, extract_fn):
     """
     Iterate experiment results and extract info using some extraction function.
@@ -144,12 +148,37 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(15,1
     if save_path is not None:
         plt.savefig(save_path)
 
+def plot_q_values(data, figsize=(15,10), save_path=None):
+    """
+    Plot the maximum Q values over the episodes
+
+    Aggregated across all seeds with error bands
+    """
+    plt.style.use(["seaborn-talk","seaborn-deep"])
+    fig, ax = plt.subplots(figsize=figsize, dpi=300)
+    for exp_setting, q_values in data.items():
+        mean_q_values = np.mean(q_values, axis=0)
+        std_q_values = np.std(q_values, axis=0)
+        upper_band = mean_q_values+std_q_values
+        lower_band = mean_q_values-std_q_values
+        episode_indexes = range(len(mean_q_values))
+        ax.plot(episode_indexes, mean_q_values, label=exp_setting)
+        ax.fill_between(episode_indexes, upper_band, lower_band, alpha=0.3)
+    ax.set_xlabel("Episodes")
+    ax.set_ylabel("Maximum Q Values")
+    plt.legend()
+    if save_path:
+        fig.savefig(save_path)
+    else:
+        plt.show()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.99, help='discount_factor to base plotting on')
     parser.add_argument('--reward', action='store_true', help='if specified, make plots for average reward')
     parser.add_argument('--environment', metavar='training environment', type=str, default='MountainCar-v0', help='which environment for plots')
+    parser.add_argument('--q_values', action='store_true', help='plot maximum Q values across episodes')
     args = parser.parse_args()
 
     environment = None
@@ -157,15 +186,21 @@ if __name__ == "__main__":
         environment = args.environment
     except AttributeError:
         pass
-    mode = 'reward' if args.reward else 'q_divergence'
-    if mode == 'reward':
-        read_log = True
-        extract_fn = extract_reward
-    else:
-        read_log = False
-        extract_fn = extract_max_q
 
-    results = load_experiment_results(discount_factor=args.discount, read_log=read_log)
-    data = iterate_results(results, extract_fn=extract_fn)
-    make_violinplots(data, discount_factor=args.discount, mode=mode, environment=environment,
-                     save_path=f'violinplot_{mode}_{args.environment}_{args.discount}.png')
+    if args.q_values:
+        results = load_experiment_results(discount_factor=args.discount)
+        q_values_df = iterate_results(results, extract_fn=extract_q_values)
+        plot_q_values(q_values_df[environment], save_path=f"{environment}_q_values.png")
+    else:
+        mode = 'reward' if args.reward else 'q_divergence'
+        if mode == 'reward':
+            read_log = True
+            extract_fn = extract_reward
+        else:
+            read_log = False
+            extract_fn = extract_max_q
+
+        results = load_experiment_results(discount_factor=args.discount, read_log=read_log)
+        data = iterate_results(results, extract_fn=extract_fn)
+        make_violinplots(data, discount_factor=args.discount, mode=mode, environment=environment,
+                        save_path=f'violinplot_{mode}_{args.environment}_{args.discount}.png')
