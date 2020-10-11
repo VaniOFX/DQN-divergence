@@ -222,7 +222,7 @@ the network's learning capacity (and the reward obtained).
 
 We see that error clipping is instrumental to making the tricks work.
 Without error clipping, the tricks actually hasten the divergence, rather than
-slow it down.
+slow it down in our experiments.
 
 
 ## Conclusions
