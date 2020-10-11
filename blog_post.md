@@ -181,11 +181,70 @@ We use the following hyperparameter settings in all our experiments:
 - discount factor x
       - we try to stick to the original paper as much as possible -->
 
-## Results
+## Results and Discussion
+
+
+After identifying the best hyper-parameters for each of our environments, we
+looked at their divergence in four setups: with all tricks disabled, with
+memory sampling, having a target network, and by having both tricks enabled.
+Our results for MountainCar and Acrobot are shown below
+
+![MountainCar divergence](./img/violinplot_q_divergence_MountainCar-v0_0.99.png)
+![Acrobot divergence](./img/violinplot_q_divergence_Acrobot-v0_0.99.png)
+
+On the y-axis we see the $$\max |Q|$$ on a logarithmic scale.
+The dashed line represents our theoretical maximal $$|Q|$$, above which we deem
+the network to have diverged.
+We see that with these environments, memory sampling has a limited effect on
+slowing down divergence, whereas employing a separate target network is more
+effective.
+We also observe that when having both tricks,the network's divergence is slowed
+down even more.
+
+Based on all our experiments we can say that divergence with DQN is
+unavoidable, however it can be slowed down, allowing the network to learn more,
+and achieve a higher score.
+We can see this in the following plots, which show us the distribution of
+obtained rewards.
+
+![MountainCar reward](./img/violinplot_reward_MountainCar-v0_0.99.png)
+![Acrobot reward](./img/violinplot_reward_Acrobot-v0_0.99.png)
+
+In the case of having both memory sampling and a target network enabled, we
+achieved the highest reward.
+However, the graphs also tell us that although the target network is more
+effective at slowing down divergence, it also negatively influences DQN's
+learning capabilities.
+
+// TOOD: maybe think of a theoretical explanation of this?
+
+Lastly, we look at our results on the CartPole environment, for which we
+explicitly disabled the error clipping.
+Mnih et. al. argued that this improved the stability of the neural network,
+however based on our findings, we can say that it also significantly reduced
+the network's learning capacity (and the reward obtained).
+
+![CartPole divergence](./img/violinplot_q_divergence_CartPole-v0_0.99.jpeg)
+<> TODO: add reward image of CartPole.
+
+We see that error clipping is instrumental to making the tricks work.
+Without error clipping, the tricks actually hasten the divergence, rather than
+slow it down in our experiments.
 
 
 ## Conclusions
 
+With this article we looked at DQN's stability and how memory sampling and a
+separate target network help prevent divergence.
+We came to the conclusion that both tricks are in fact necessary and that
+without them the network is likely to spiral out of control within a
+(relatively) short amount of episodes.
+The target network trick proved to be more effective in slowing divergence, but
+it caused less optimal parameters to be learned.
+Combining the two tricks gave us the best results.
+
+We also looked at the effects of clipping the error term during training, and
+understood that netither of tricks is useful without the clipping in the simple environments we tested.
 
 
 **Footnotes**
