@@ -140,18 +140,14 @@ where the last equality is a general result for geometric series. This means tha
     - reward clipping -->
 
 ## Experimental setup
+We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) closely. The loss term we use is the mean-squared error which is clipped in the range [-1; 1], as it was reported to improve the stability of the algorithm. The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
-We are now able to quantify divergence, which gives us a straightforward way to compare different algorithms in terms of divergence. We run each setup X times, and report the fraction of runs at which soft divergence occurs. We set the amount of runs to ?? to ensure statistically significant results, while taking our computational budget into account.
+Since divergence can now be quantified, we use it as a metric to compare the improvement that each of the tricks brings to DQN. We run each experiment 25 times with 25 different random seeds to achieve statistically significant results. We chose this number to be as high as possible taking into account our computational budget as well. We judge whether the model has diverged by looking at the maximal Q-value predicted in the last step of the last episode - if it is above the threshold $$\frac{1}{1-\gamma}$$, we say it has diverged. At the end, we compare the configurations by counting how many times each of them has diverged.
 
-We try to make sure our experimental setup coincides with the DQN implementation as much as possible. Due to computational constraints, we unfortunately can't run any experiments on Atari games. Instead, we investigate the following simpler environments: Cart-Pole, Mountain Car, Inverse Pendulum, ... . We want enough environments such that we have divergence and convergence on each setup. 
+Even though the original paper uses a convolutional neural network to play Atari games, we focus on the simpler and less computationally expensive Cart Pole, Mountain Car and Acrobot. Our model is a single-layer fully-connected network with a hidden layer of size 128. We end up comparing 4 different setups for each environment - with both tricks, with each trick separately and without tricks at all.
 
-We use the following hyperparameter settings in all our experiments:
-- We use an epsilon-greedy exploration strategy, where epsilon is linearly annealed over ?? steps to 0.05, after which it stays at that level.
-- Learning rate $$\alpha = x$$
-- Adam optimizer
-- reward clipping to range [-1, 1]
-- gradient clipping to x
-- discount factor x
+All the experiments are run for 700 episodes which has been found to be enough for the agents to learn to win the games. For better exploration, we use an $\epsilon$$-greedy strategy, which we linearly anneal from 1 to a minimum of 0.1 during the first 400 episodes, and keep it fixed after. The discount factor is fixed to 0.99 for all the environments. Another hyperparameter is the frequency of updates for the target network (whenever the technique is used) and we empirically find 400, 2000, 2000 to work well for Mountain Car, Cart Pole and Acrobot respectively. No extensive hyperparameter search has been executed since the focus of our work is not SOTA performance but to compare the importance of the methods instead. The values of the parameters are selected manually for the configuration with no tricks and kept fixed for all other configurations of the respective environment.
+
 
 <!--- - Evaluating the different techniques
     - how we evaluate the techniques
@@ -171,7 +167,18 @@ We use the following hyperparameter settings in all our experiments:
       - discount factor
       - reward clipping
       - gradient clipping
-      - ...
+      - …
+We run each setup X times, and report the fraction of runs at which soft divergence occurs. We set the amount of runs to ?? to ensure statistically significant results, while taking our computational budget into account.
+
+We try to make sure our experimental setup coincides with the DQN implementation as much as possible. Due to computational constraints, we unfortunately can't run any experiments on Atari games. Instead, we investigate the following simpler environments: Cart-Pole, Mountain Car, Inverse Pendulum, ... . We want enough environments such that we have divergence and convergence on each setup. 
+
+We use the following hyperparameter settings in all our experiments:
+- We use an epsilon-greedy exploration strategy, where epsilon is linearly annealed over ?? steps to 0.05, after which it stays at that level.
+- Learning rate $$\alpha = x$$
+- Adam optimizer
+- reward clipping to range [-1, 1]
+- gradient clipping to x
+- discount factor x
       - we try to stick to the original paper as much as possible -->
 
 ## Results
