@@ -218,7 +218,7 @@ however based on our findings, we can say that it also significantly reduced
 the network's learning capacity (and the reward obtained).
 
 ![CartPole divergence](./img/violinplot_q_divergence_CartPole-v0_0.99.jpeg)
-// TODO: add reward image of CartPole.
+<> TODO: add reward image of CartPole.
 
 We see that error clipping is instrumental to making the tricks work.
 Without error clipping, the tricks actually hasten the divergence, rather than
