@@ -189,8 +189,8 @@ looked at their divergence in four setups: with all tricks disabled, with
 memory sampling, having a target network, and by having both tricks enabled.
 Our results for MountainCar and Acrobot are shown below
 
-![MountainCar divergence](./img/violinplot_q_divergence_MountainCar-v0_0.99.png)
-![Acrobot divergence](./img/violinplot_q_divergence_Acrobot-v0_0.99.png)
+![MountainCar divergence]({{page.img_dir}}violinplot_q_divergence_MountainCar-v0_0.99.png)
+![Acrobot divergence]({{page.img_dir}}violinplot_q_divergence_Acrobot-v0_0.99.png)
 
 On the y-axis we see the $$\max |Q|$$ on a logarithmic scale.
 The dashed line represents our theoretical maximal $$|Q|$$, above which we deem
@@ -207,8 +207,8 @@ and achieve a higher score.
 We can see this in the following plots, which show us the distribution of
 obtained rewards.
 
-![MountainCar reward](./img/violinplot_reward_MountainCar-v0_0.99.png)
-![Acrobot reward](./img/violinplot_reward_Acrobot-v0_0.99.png)
+![MountainCar reward]({{page.img_dir}}violinplot_reward_MountainCar-v0_0.99.png)
+![Acrobot reward]({{page.img_dir}}violinplot_reward_Acrobot-v0_0.99.png)
 
 In the case of having both memory sampling and a target network enabled, we
 achieved the highest reward.
@@ -216,7 +216,7 @@ However, the graphs also tell us that although the target network is more
 effective at slowing down divergence, it also negatively influences DQN's
 learning capabilities.
 
-// TOOD: maybe think of a theoretical explanation of this?
+<!--- // TOOD: maybe think of a theoretical explanation of this? -->
 
 Lastly, we look at our results on the CartPole environment, for which we
 explicitly disabled the error clipping.
@@ -224,8 +224,8 @@ Mnih et. al. argued that this improved the stability of the neural network,
 however based on our findings, we can say that it also significantly reduced
 the network's learning capacity (and the reward obtained).
 
-![CartPole divergence](./img/violinplot_q_divergence_CartPole-v0_0.99.jpeg)
-<> TODO: add reward image of CartPole.
+![CartPole divergence]({{page.img_dir}}violinplot_q_divergence_CartPole-v0_0.99.jpeg)
+<!--- <> TODO: add reward image of CartPole. -->
 
 We see that error clipping is instrumental to making the tricks work.
 Without error clipping, the tricks actually hasten the divergence, rather than
