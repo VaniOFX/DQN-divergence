@@ -63,7 +63,7 @@ $$
 Q(s, a) \leftarrow Q(s, a) + \alpha (r + \gamma \max_{a'} Q(s', a') - Q(s, a)), (2)
 $$
 
-where $$\alpha$$ is a learning rate parameter controlling learning speed. This update pushes the current $$Q$$-values $$Q(s, a)$$ towards their **bootstrap** targets $$r + \gamma \max_{a'}Q(s', a')$$. The sample transitions can be generated using *any* policy, such as an [epsilon-greedy policy](https://medium.com/analytics-vidhya/the-epsilon-greedy-algorithm-for-reinforcement-learning-5fe6f96dc870), making $$Q$$-learning an [**off-policy**](https://stats.stackexchange.com/questions/184657/what-is-the-difference-between-off-policy-and-on-policy-learning) method.
+where $$\alpha$$ is a learning rate parameter controlling learning speed. This update pushes the current $$Q$$-values $$Q(s, a)$$ towards their **bootstrap targets** $$r + \gamma \max_{a'}Q(s', a')$$. The sample transitions can be generated using *any* policy, such as an [epsilon-greedy policy](https://medium.com/analytics-vidhya/the-epsilon-greedy-algorithm-for-reinforcement-learning-5fe6f96dc870), making $$Q$$-learning an [**off-policy**](https://stats.stackexchange.com/questions/184657/what-is-the-difference-between-off-policy-and-on-policy-learning) method.
 
 <!--- In most realistic scenarios such as playing Atari games, we can't store $$Q$$-values for every possible state, as the state space is too large. It is therefore usually necessary to **approximate** the $$Q$$-values. -->
 
@@ -73,7 +73,7 @@ where $$\alpha$$ is a learning rate parameter controlling learning speed. This u
 
 ### Function Approximation
 
-Imagine mapping an Atari game state to a $$Q$$-value directly from image data. Assuming RGB pixel values and an 84x84 pixel screen, we would need to store $$(256 \cdot 3)^{84\cdot84}$$ values, one for each pixel configuration. Besides this impracticality, we would also not generalize well between different pixel states, as these do not capture latent structure efficiently.
+In most realistic scenarios, the state space is too large to store $$Q$$-values for. Imagine mapping an Atari game state to a $$Q$$-value directly from image data. Assuming RGB pixel values and an 84x84 pixel screen, we would need to store $$(256 \cdot 3)^{84\cdot84}$$ values, one for each pixel configuration. Besides this impracticality, we would also not generalize well between different pixel states, as these do not capture latent structure efficiently.
 
 Therefore, **function approximation** is used to predict $$Q$$-values using some learned function, given a state or state-action pair. This allows $$Q$$-values to be represented in a compressed form (the parameters) and generalization over similar states.
 
