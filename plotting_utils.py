@@ -23,7 +23,7 @@ def get_experiment_setting(config):
         result = 'target'
     return result
 
-def load_experiment_results(discount_factor=0.99, read_log=False):
+def load_experiment_results(discount_factor=0.99, read_log=False, num_episodes=700):
     """
     Extract info from all experiments.
     
@@ -49,7 +49,7 @@ def load_experiment_results(discount_factor=0.99, read_log=False):
         environment = config.env
         experiment_setting = get_experiment_setting(config)
         
-        if config.discount_factor == discount_factor:
+        if config.discount_factor == discount_factor and config.num_episodes == num_episodes:
             if environment not in result:
                 result[environment] = {}
             if experiment_setting not in result[environment]:
@@ -72,12 +72,21 @@ def load_experiment_results(discount_factor=0.99, read_log=False):
 
     return result
 
-def extract_reward(log):
-    """Extract reward from log file."""
+def extract_final_reward(log):
+    """Extract final reward from log file."""
     last_reward_line = log.split('\n')[-3]
     return float(re.search('Avg-Episode-Reward:\s+(\S+)', last_reward_line).group(1))
 
-def extract_max_q(results):
+def extract_reward_max_q(log):
+    """Extract final reward and max Q from log file."""
+    log_lines = log.split('\n')[8:-3]
+    get_reward = lambda line: float(re.search('Avg-Episode-Reward:\s+(\S+)', line).group(1))
+    get_q = lambda line: float(re.search('Max-\|Q\|:\s+(\S+)', line).group(1))
+    rewards = [get_reward(line) for line in log_lines]
+    max_qs = [get_q(line) for line in log_lines]
+    return np.array([rewards, max_qs])
+
+def extract_final_max_q(results):
     """Extract (latest) max q from pandas dataframe."""
     return results.loc[results.index[-1], 'max_q_values']
 
@@ -174,13 +183,37 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
     else:
         plt.show()
 
+def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
+    """ Plot the maximum Q values against rewards for all tricks """
+    # plt.style.use("seaborn-talk")
+    plt.style.use("fivethirtyeight")
+    fig, ax = plt.subplots(figsize=figsize, dpi=300)
+    markers = ["x", "*", "o", "v"]
+    for i, (exp_setting, rewards_qs) in enumerate(data.items()):
+        rewards = rewards_qs[:, 0, :]
+        mean_rewards = np.mean(rewards, axis=0)
+        qs = rewards_qs[:, 1, :]
+        mean_qs = np.mean(qs, axis=0)
+        ax.scatter(mean_qs, mean_rewards, marker=markers[i], label=exp_setting, alpha=0.7)
+    ax.axvline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=1)
+    ax.set_xlabel("Maximum Q Values")
+    ax.set_ylabel("Average Rewards per Episode")
+    plt.legend()
+    plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path)
+    else:
+        plt.show()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.99, help='discount_factor to base plotting on')
-    parser.add_argument('--reward', action='store_true', help='if specified, make plots for average reward')
+    parser.add_argument('--num_episodes', metavar='num_episodes', type=int, default=700, help='number of episodes')
     parser.add_argument('--environment', metavar='training environment', type=str, default='MountainCar-v0', help='which environment for plots')
+    parser.add_argument('--reward', action='store_true', help='if specified, make plots for average reward')
     parser.add_argument('--q_values', action='store_true', help='plot maximum Q values across episodes')
+    parser.add_argument('--reward_q_values', action='store_true', help='plot rewards vs q values')
     args = parser.parse_args()
 
     environment = None
@@ -190,19 +223,24 @@ if __name__ == "__main__":
         pass
 
     if args.q_values:
-        results = load_experiment_results(discount_factor=args.discount)
+        results = load_experiment_results(discount_factor=args.discount, num_episodes=args.num_episodes)
         q_values_df = iterate_results(results, extract_fn=extract_q_values)
         plot_q_values(q_values_df[environment], discount_factor=args.discount, save_path=f"{environment}_q_values.png")
+    elif args.reward_q_values:
+        logs = load_experiment_results(read_log=True)
+        rewards_qs = iterate_results(logs, extract_fn=extract_reward_max_q)
+        plot_rewards_qs(rewards_qs[environment], discount_factor=args.discount, save_path=f"{environment}_rewards_q_values.png")
+        pass
     else:
         mode = 'reward' if args.reward else 'q_divergence'
         if mode == 'reward':
             read_log = True
-            extract_fn = extract_reward
+            extract_fn = extract_final_reward
         else:
             read_log = False
-            extract_fn = extract_max_q
+            extract_fn = extract_final_max_q
 
-        results = load_experiment_results(discount_factor=args.discount, read_log=read_log)
+        results = load_experiment_results(discount_factor=args.discount, read_log=read_log, num_episodes=args.num_episodes)
         data = iterate_results(results, extract_fn=extract_fn)
         make_violinplots(data, discount_factor=args.discount, mode=mode, environment=environment,
                         save_path=f'violinplot_{mode}_{args.environment}_{args.discount}.png')
