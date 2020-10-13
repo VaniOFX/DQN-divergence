@@ -113,7 +113,7 @@ def iterate_results(results, extract_fn):
     return outputs
 
 
-def make_violinplots(data, discount_factor=None, environment=None, figsize=(15,10),
+def make_violinplots(data, discount_factor=None, environment=None, figsize=(10,10),
                      mode='q_divergence', save_path=None):
     """
     Make violinplots similar to van Hassalt et al.
@@ -141,12 +141,12 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(15,1
 
     fig, ax = plt.subplots(figsize=figsize)
     sns.violinplot(data=df_melt, x='variable', y='value', order=possible_experiment_settings, scale='count',
-                   cut=0, inner='stick', ax=ax)
+                   cut=0, inner='stick', ax=ax, dpi=300)
     if mode == 'q_divergence':
         divergence_level = 1 / (1 - discount_factor)
         ax.axhline(divergence_level, linestyle='--', color='black', linewidth=3)
         ax.set_yscale('log')
-        ylabel = 'max abs Q'
+        ylabel = 'Maximum |Q| values (log scale)'
     elif mode == 'reward':
         ylabel = 'Final average reward'
     ax.set_xlabel(None)
