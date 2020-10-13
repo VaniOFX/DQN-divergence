@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import yaml
 from omegaconf import DictConfig
+from collections import OrderedDict
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import argparse
@@ -188,12 +189,15 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
     # plt.style.use("seaborn-talk")
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
     markers = ["x", "*", "o", "v"]
-    for i, (exp_setting, rewards_qs) in enumerate(data.items()):
-        rewards = rewards_qs[:, 0, :]
-        mean_rewards = np.mean(rewards, axis=0)
-        qs = rewards_qs[:, 1, :]
-        mean_qs = np.mean(qs, axis=0)
-        ax.scatter(mean_qs, mean_rewards, marker=markers[i], label=exp_setting, alpha=0.7)
+    # consistent ordering of exp_settings
+    # data = OrderedDict(data)
+    for i, exp_setting in enumerate(possible_experiment_settings):
+        rewards_qs = data[exp_setting]
+        rewards = rewards_qs[:, 0, -1]
+        # mean_rewards = np.mean(rewards, axis=0)
+        qs = rewards_qs[:, 1, -1]
+        # mean_qs = np.mean(qs, axis=0)
+        ax.scatter(qs, rewards, marker=markers[i], label=exp_setting, alpha=0.7)
     ax.axvline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=1)
     ax.set_xlabel("Maximum Q Values")
     ax.set_ylabel("Average Rewards per Episode")
