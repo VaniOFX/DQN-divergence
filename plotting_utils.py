@@ -163,7 +163,7 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
 
     Aggregated across all seeds with error bands
     """
-    plt.style.use(["seaborn-talk","seaborn-deep"])
+    #plt.style.use(["seaborn-talk","seaborn-deep"])
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
     for exp_setting, q_values in data.items():
         mean_q_values = np.mean(q_values, axis=0)
@@ -186,7 +186,6 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
 def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
     """ Plot the maximum Q values against rewards for all tricks """
     # plt.style.use("seaborn-talk")
-    plt.style.use("fivethirtyeight")
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
     markers = ["x", "*", "o", "v"]
     for i, (exp_setting, rewards_qs) in enumerate(data.items()):
@@ -207,6 +206,7 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
 
 
 if __name__ == "__main__":
+    plt.style.use("fivethirtyeight")
     parser = argparse.ArgumentParser()
     parser.add_argument('--discount', metavar='discount_factor', type=float, default=0.99, help='discount_factor to base plotting on')
     parser.add_argument('--num_episodes', metavar='num_episodes', type=int, default=700, help='number of episodes')
