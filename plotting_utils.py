@@ -188,7 +188,7 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
     """ Plot the maximum Q values against rewards for all tricks """
     # plt.style.use("seaborn-talk")
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
-    markers = ["x", "*", "o", "v"]
+    markers = ["o", "x", "v", "*"]
     # consistent ordering of exp_settings
     # data = OrderedDict(data)
     for i, exp_setting in enumerate(possible_experiment_settings):
