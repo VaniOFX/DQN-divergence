@@ -190,54 +190,55 @@ We use the following hyperparameter settings in all our experiments:
 - discount factor x
       - we try to stick to the original paper as much as possible -->
 
-## Results and Discussion
+## Results
 
-After identifying the best hyper-parameters for each of our environments, we
-looked at their divergence in four setups: with all tricks disabled, with
-memory sampling, having a target network, and by having both tricks enabled.
-Our results for MountainCar and Acrobot are shown below
+The results of the best performing hyper-parameters are shown in the below figure.
+The figure displays a scatter plot of DQN's performance in the last 20 episodes of our experiments.
+We use the x-axis to measure the max-|Q|, identifying divergence (log-scale in the Acrobot experiment), and on the y-axis we plot the average *return*.
+The figure allows us to analyse the effects of the employed tricks not only on the max-|Q|, but also on the overall performance of the DQN agent.
+We shall note the obtained results first for each environment separately, and then we shall point out our general conclusions.
 
-![MountainCar divergence]({{page.img_dir}}violinplot_q_divergence_MountainCar-v0_0.99.png)
-![Acrobot divergence]({{page.img_dir}}violinplot_q_divergence_Acrobot-v0_0.99.png)
+![DQN reward-divergence scatter]({{page.img_dir}}scatter.png)
+<!-- TODO: add titles to the plots, identifying the experiment -->
+<!-- TODO: rename 'Average Rewards per Episode' to 'Average Return' -->
+<!-- TODO: rename 'Maximum Q values' to 'Maximum Absolute Q value' -->
 
-On the y-axis we see the $$\max |Q|$$ on a logarithmic scale.
-The dashed line represents our theoretical maximal $$|Q|$$, above which we deem
-the network to have diverged.
-We see that with these environments, memory sampling has a limited effect on
-slowing down divergence, whereas employing a separate target network is more
-effective.
-We also observe that when having both tricks,the network's divergence is slowed
-down even more.
+To begin with, let us look at the Mountain Car results.
+It is obvious that vanilla DQN diverges and miserably fails at learning a good estimate of the Q-value function.
+Similarly, the network with Memory Replay also performs badly, with the exception of a few outliers, which perform quite well.
+We can say that when the Memory Replay network did not diverge, it obtained a very good overall return.
+Moving on, we see that having a separate Target Network eliminated divergence completely, but Q-value estimates remained poor.
+Our best performing network is the one, which had both tricks enabled, which both did not diverge and achieved consistently high rewards.
 
-Based on all our experiments we can say that divergence with DQN is
-unavoidable, however it can be slowed down, allowing the network to learn more,
-and achieve a higher score.
-We can see this in the following plots, which show us the distribution of
-obtained rewards.
 
-![MountainCar reward]({{page.img_dir}}violinplot_reward_MountainCar-v0_0.99.png)
-![Acrobot reward]({{page.img_dir}}violinplot_reward_Acrobot-v0_0.99.png)
+Secondly, we go over the Acrobot results (note the logarithmic x-axis).
+As with Mountain Car, here our vanilla network is the worst out of all configurations - it diverges heavily without learning practically anything.
+On the other hand, with this experiment, we observe that Memory Replay manages to lead to good policies, despite reaching very high max-|Q|.
+We treat this as an indication that our chosen metric of soft divergence is not fully indicative of how well DQN learns.
+In line with Mountain Car, on the Acrobot environment using both tricks both alleviates divergence and leads to high returns, however in this setting we also observe not-so-bad returns from just the Target Network.
 
-In the case of having both memory sampling and a target network enabled, we
-achieved the highest reward.
-However, the graphs also tell us that although the target network is more
-effective at slowing down divergence, it also negatively influences DQN's
-learning capabilities.
 
-<!--- // TOOD: maybe think of a theoretical explanation of this? -->
+Thirdly, we direct our attention to the Cart Pole environment's results in the last scatter plot, for which we note that error clipping was disabled - this was one of the hyper-parameters, which yielded better results for Cart Pole.
+We see that both vanilla and Memory Replay DQN manage to learn good policies at the expense of soft divergence, with the latter getting slighly higher rewards, but also suffering from a much higher max-|Q|.
+Similarly as with the previous plots, having a Target Network greatly reduced our soft divergence metric, yet in this case, the obtained returns were lower.
+Being consistent with what we already observed, Target Network and Memory Replay working together outputs low max-|Q| (without diverging) and high rewards (but not necessarily the highest).
 
-Lastly, we look at our results on the CartPole environment, for which we
-explicitly disabled the error clipping.
-Mnih et. al. argued that this improved the stability of the neural network,
-however based on our findings, we can say that it also significantly reduced
-the network's learning capacity (and the reward obtained).
+Finally, we make a summary of our experience with DQN's tricks.
+With all 3 of our explored environments, enabling both tricks led to consistently lower max-|Q| and did not diverge a single time (during the 700 training episodes).
+Conversely, with both vanilla DQN and Memory Replay divergence seems inevitable with just a few outliers.
+We saw that despite experiencing soft divergence with Memory Replay, our DQN agent was able to learn a good policy and consequently obtain high returns.
+We deem this to be cause by the trick's effect on the action samples.
+Namely, that Memory Replay removes the correlation among consecutive actions, leading to better a realisation of the i.i.d. assumption, and subsequently allowing gradient descent to find a better optimum.
+On the other hand, the Target Network trick significantly helps in managing the max-|Q|, as well as its variance.
+Combining both tricks gives us the best of both worlds - a controlled divergence setup with good Q-value estimates (and hence high rewards).
 
-![CartPole divergence]({{page.img_dir}}violinplot_q_divergence_CartPole-v0_0.99.jpeg)
-<!--- <> TODO: add reward image of CartPole. -->
 
-We see that error clipping is instrumental to making the tricks work.
-Without error clipping, the tricks actually hasten the divergence, rather than
-slow it down in our experiments.
+## Discussion
+
+Lastly, we note a few limitations in our evaluation setup.
+To start with, we do not do an exhaustive hyper-parameter search on our 3 chosen environments.
+We focused on varying the discount factor and Target Network frequency, yet even for those we considered only a few values.
+
 
 
 ## Conclusions
