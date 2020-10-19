@@ -148,7 +148,7 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(10,1
         ax.set_yscale('log')
         ylabel = 'Maximum |Q| values (log scale)'
     elif mode == 'reward':
-        ylabel = 'Final average reward'
+        ylabel = 'Returns'
     ax.set_xlabel(None)
     ax.set_ylabel(ylabel, fontsize=20)
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
@@ -200,7 +200,7 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
         ax.scatter(qs, rewards, marker=markers[i], label=exp_setting, alpha=0.7)
     ax.axvline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=1)
     ax.set_xlabel("Maximum Q Values")
-    ax.set_ylabel("Average Rewards per Episode")
+    ax.set_ylabel("Average Returns per Episode")
     plt.legend()
     plt.tight_layout()
     if save_path:
