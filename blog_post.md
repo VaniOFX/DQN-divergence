@@ -192,11 +192,11 @@ We use the following hyperparameter settings in all our experiments:
 
 ## Results
 
-The results of the best performing hyper-parameters are shown in the below figure.
+Our main results can be summarized by the figure below.
 The figure displays a scatter plot of DQN's performance in the last 20 episodes of our experiments.
-We use the x-axis to measure the max-|Q|, identifying divergence (log-scale in the Acrobot experiment), and on the y-axis we plot the average *return*.
-The figure allows us to analyse the effects of the employed tricks not only on the max-|Q|, but also on the overall performance of the DQN agent.
-We shall note the obtained results first for each environment separately, and then we shall point out our general conclusions.
+We use the x-axis to measure the max absolute $$Q$$, identifying divergence (log-scale in the Acrobot experiment), and on the y-axis we plot the average *return*.
+The figure allows us to analyse the effects of the employed tricks on divergence and overall performance of the DQN agent at the same time.
+We first discuss the obtained results first for each environment separately, from which we draw our general conclusions.
 
 ![DQN reward-divergence scatter]({{page.img_dir}}scatter.png)
 <!-- TODO: add titles to the plots, identifying the experiment -->
@@ -204,27 +204,34 @@ We shall note the obtained results first for each environment separately, and th
 <!-- TODO: rename 'Maximum Q values' to 'Maximum Absolute Q value' -->
 
 To begin with, let us look at the Mountain Car results.
-It is obvious that vanilla DQN diverges and miserably fails at learning a good estimate of the Q-value function.
-Similarly, the network with Memory Replay also performs badly, with the exception of a few outliers, which perform quite well.
-We can say that when the Memory Replay network did not diverge, it obtained a very good overall return.
-Moving on, we see that having a separate Target Network eliminated divergence completely, but Q-value estimates remained poor.
-Our best performing network is the one, which had both tricks enabled, which both did not diverge and achieved consistently high rewards.
+The Vanilla setting diverges and fails miserably at learning a good policy.
+The network with Memory Replay also performs badly for most runs, but it does learn a good policy for a small amount of runs.
+When the Memory setting does not diverge, it obtains a good overall return. This is an interesting observation, as it suggests that our measure of divergence is indeed predictive of final performance for this environment.
+
+<!--- TODO: make tense consistent: present tense --->
+<!--- TODO: setting vs environment consistent ---> 
+While having a separate Target Network eliminated divergence completely, the learned policy is relatively poor.
+As expected, the network with both tricks enabled performed best. It did not diverge and consistently achieved high rewards.
 
 
-Secondly, we go over the Acrobot results (note the logarithmic x-axis).
-As with Mountain Car, here our vanilla network is the worst out of all configurations - it diverges heavily without learning practically anything.
-On the other hand, with this experiment, we observe that Memory Replay manages to lead to good policies, despite reaching very high max-|Q|.
-We treat this as an indication that our chosen metric of soft divergence is not fully indicative of how well DQN learns.
-In line with Mountain Car, on the Acrobot environment using both tricks both alleviates divergence and leads to high returns, however in this setting we also observe not-so-bad returns from just the Target Network.
+We now go over the results for the Acrobot environment. For clarity, we use a log scale for the Q values here.
+As with Mountain Car, here the vanilla network is the worst out of all configurations. Again, it diverges heavily, not learning any meaningful policy.
+On the other hand, with this experiment, we observe that Memory Replay manages to lead to good policies, despite exhibiting soft divergence.
+This suggests that the amount of soft divergence, our proxy for divergence, is not fully indicative of how well an algorithm learns.
+We see again that using both tricks alleviates divergence and leads to high returns. If just the target network is used, divergence is again controlled, but the learned policy is still worse than that of using both tricks.
 
 
-Thirdly, we direct our attention to the Cart Pole environment's results in the last scatter plot, for which we note that error clipping was disabled - this was one of the hyper-parameters, which yielded better results for Cart Pole.
-We see that both vanilla and Memory Replay DQN manage to learn good policies at the expense of soft divergence, with the latter getting slighly higher rewards, but also suffering from a much higher max-|Q|.
-Similarly as with the previous plots, having a Target Network greatly reduced our soft divergence metric, yet in this case, the obtained returns were lower.
-Being consistent with what we already observed, Target Network and Memory Replay working together outputs low max-|Q| (without diverging) and high rewards (but not necessarily the highest).
+We now direct our attention to the Cart Pole environment's results in the last scatter plot.
 
-Finally, we make a summary of our experience with DQN's tricks.
-With all 3 of our explored environments, enabling both tricks led to consistently lower max-|Q| and did not diverge a single time (during the 700 training episodes).
+<!---- TODO: move error clipping of cart pole to experimental setup -- "we note that error clipping was disabled - this was one of the hyper-parameters, which yielded better results for Cart Pole." ---->
+Despite both vanilla and MR DQN exhibiting soft divergence, they still manage to learn good policies. Interestingly, although MR shows the most divergence, it achieves a higher average return than the other settings do.
+
+<!---- TODO: in the beginning of results, introduce memory replay = MR, etc. --->
+In line with the previous results, having a Target Network greatly reduces soft divergence. However, its average return is now even lower than that of the vanilla setting.
+Once more, using both tricks controls soft divergence and allows learns good policies. However, MR does perform better in this case.
+
+Let's put all discussed results into perspective.
+In all 3 of our explored environments, enabling both tricks led to consistently lower max-|Q| and did not diverge a single time (during the 700 training episodes).
 Conversely, with both vanilla DQN and Memory Replay divergence seems inevitable with just a few outliers.
 We saw that despite experiencing soft divergence with Memory Replay, our DQN agent was able to learn a good policy and consequently obtain high returns.
 We deem this to be cause by the trick's effect on the action samples.
