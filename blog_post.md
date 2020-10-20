@@ -210,7 +210,6 @@ We first discuss the obtained results for each environment separately, from whic
 </div> -->
 
 <!--- TODO: add titles to the plots, identifying the experiment -->
-<!--- TODO: rename 'Maximum Q values' to 'Maximum Absolute Q value' -->
 
 To begin with, let's look at the Mountain Car results below.
 
@@ -221,7 +220,6 @@ The memory agent also performs badly for most runs, but does learn a good policy
 Specifically **for the runs where the memory agent does not diverge, it actually obtains a good overall return.**
 This is an interesting observation, as it suggests that our measure of divergence is indeed predictive of final performance for this environment.
 
-<!--- TODO: make tense consistent: present tense --->
 <!--- TODO: setting vs environment consistent ---> 
 The target agent has managed to eliminate divergence completely, but the policy it learns is poor. **Not diverging is clearly not a guarantee for good performance.**
 As expected, the network with both tricks enabled, the DQN agent, performs best. 
@@ -274,7 +272,7 @@ This is made especially clear by the below figure, which zooms in on the distrib
 
 **For the Acrobot environment, the memory agent is able to learn good policies even when it shows divergence. The same holds for the memory and vanilla agents in the Cart Pole environment.** This contrasts the findings in the Mountain Car environment, where the memory agent only learns a good policy when it doesn't diverge. It appears that divergence has a larger impact on performance for some environments than for others. There are many possible explanations for this, among which:
 
-- We hypothesize that the **difficulty of a task** is an important factor in this process. In the simplest environment, Cart Pole, divergence doesn't seem to be an issue in terms of performance. In the harder environments however, divergence does seem to affect the quality of the policies. In Acrobot, the variance of the memory agent is very high, and its performance is lower compared to the DQN agent as well. **In the Mountain Car environment, the agent didn't manage to learn anything for every single run that diverged.** It might be that as the task grows more difficult, having accurate Q value estimates becomes more important.
+- We hypothesize that the **difficulty of a task** is an important factor in this process. In the simplest environment, Cart Pole, divergence doesn't seem to be an issue in terms of performance. In the harder environments,we however, divergence does seem to affect the quality of the policies. In Acrobot, the variance of the memory agent is very high, and its performance is lower compared to the DQN agent as well. **In the Mountain Car environment, the agent didn't manage to learn anything for every single run that diverged.** It might be that as the task grows more difficult, having accurate Q value estimates becomes more important.
 - Another possibility is that our proxy metric for measuring divergence, max \|$$Q$$\|, is too noisy. It is calculated by keeping track over this quantity for each update transition encountered during the last 20 episodes. **Taking the maximum is not robust to outliers**. If a single high value is encountered in one state, while most of the states are well behaved, this may give a very skewed picture of the divergence in training run.
 
 Another important insight is that **adding memory replay improves performance in all our experiments**. The target agent is always improved by adding the memory replay mechanism (resulting in the DQN agent). This corroborates the findings of the original DQN paper, which say that memory replay leads to better a realization of the i.i.d. data assumption, subsequently allowing gradient descent to find a better optimum.
@@ -288,7 +286,7 @@ It is always good practice to look critically at obtained results. In this final
 - Given our constraints on computation and time, we do not do an exhaustive **hyperparameter search** over our 3 chosen environments. We focused on varying the discount factor and target network update frequency, yet even for those we considered only a few values. This means that the observed behavior might be different had we chosen different sets of hyperparameters. Ideally, we would want to average results over more hyperparameter settings.
 - Relating to the previous point, we **only use a pretty shallow neural network of 2 layers in all our experiments**. This might cause all methods to have an even harder time learning a difficult task such as the Mountain Car task.
 - We evaluate 25 seeds per setup. While this is better than 1, we would ideally want to have more seeds to base conclusions on, given the high variance of reinforcement learning methods.
-- We choose to use a proxy for divergence, soft divergence. **While this proxy is theoretically well motivated, it is still a proxy.** We don't know how it relates exactly to "actual" divergence.
+- We choose to use a proxy for divergence, soft divergence. **Despite this proxy being theoretically well-motivated, it is still a proxy.** We don't know how it relates exactly to "actual" divergence.
 - As mentioned in the previous section, our method of metric for soft divergence might no be very robust to outliers. Future studies could look at more robust versions of the metric.
 
 
