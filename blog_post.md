@@ -150,12 +150,12 @@ where the last equality is a general result for geometric series. This means tha
 Since divergence can now be quantified, we use it as a metric to compare which algorithms exhibit more divergence than others. **We say an algorithm exhibits more divergence if the fraction of runs in which soft divergence occurs is higher.** We refer to Memory Replay and Target Networks as DQN's "tricks". The improvement that each of the tricks brings to DQN is measured against the **baseline** model, DQN without tricks, or *vanilla* DQN.
 We thus compare 4 different setups for each environment: without tricks (vanilla agent), with Memory Replay (memory agent), with target networks (target agent), and with both tricks (DQN / memory+target agent).
 
-We run each experiment with 25 different random seeds to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value predicted in the last 20 episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
+We run each experiment with 25 different random seeds to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value predicted in any of the last 20 episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
 <!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
 
-We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. The loss term we use is the mean-squared error which is clipped to $$[-1, 1]$$, as it was reported to improve the stability of the algorithm. The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
+Even though the original paper uses a convolutional neural network to play Atari games, we focus on the simpler and less computationally expensive [Cart Pole](https://gym.openai.com/envs/CartPole-v1/), [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/) and [Acrobot](https://gym.openai.com/envs/Acrobot-v1/) (from [OpenAI gym](https://gym.openai.com/)). Our model is a single-layer fully-connected network with a hidden layer of size 128. 
 
-Even though the original paper uses a convolutional neural network to play Atari games, we focus on the simpler and less computationally expensive Cart Pole, Mountain Car and Acrobot. Our model is a single-layer fully-connected network with a hidden layer of size 128. 
+We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. The loss term we use is the mean-squared error (MSE). Clipping it between $$[-1, 1]$$ has been reported to improve the training stability of DQN and we use it for all environments except Cart Pole, which yields better results without doing it.  The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
 All the experiments are run for 700 episodes which has been found to be enough for the agents to learn to win the games. For better exploration, we use an $$\epsilon$$-greedy strategy, which we linearly anneal from 1 to a minimum of 0.1 during the first 400 episodes, and keep it fixed after. The discount factor is fixed to 0.99 for all the environments.
 
@@ -220,7 +220,6 @@ The memory agent also performs badly for most runs, but does learn a good policy
 Specifically **for the runs where the memory agent does not diverge, it actually obtains a good overall return.**
 This is an interesting observation, as it suggests that our measure of divergence is indeed predictive of final performance for this environment.
 
-<!--- TODO: setting vs environment consistent ---> 
 The target agent has managed to eliminate divergence completely, but the policy it learns is poor. **Not diverging is clearly not a guarantee for good performance.**
 As expected, the network with both tricks enabled, the DQN agent, performs best. 
 It does not diverge and consistently achieves high rewards.
@@ -242,15 +241,12 @@ We see again that using both tricks alleviates divergence and leads to high retu
 
 ### Cart Pole
 
-<!---- TODO: move error clipping of cart pole to experimental setup -- "we note that error clipping was disabled - this was one of the hyper-parameters, which yielded better results for Cart Pole." ---->
-
 The last environment we look at is the Cart Pole environment.
 
 ![image]({{page.img_dir}}CartPole-v1_rewards_q_values.png "Cart Pole results")
 
 Despite both the vanilla and memory agents exhibiting soft divergence, they still manage to learn good policies. Interestingly, although the memory agent shows the most divergence, it achieves a higher average return than the other settings do.
 
-<!---- TODO: in the beginning of results, introduce memory replay = MR, etc. --->
 In line with the previous results, having a target network greatly reduces soft divergence. However, its average return is now even lower than that of the vanilla agent.
 Once more, using both tricks controls soft divergence and allows learning good policies, but the memory agent does perform better in this case.
 
