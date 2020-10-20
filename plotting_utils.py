@@ -146,7 +146,7 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(10,1
         divergence_level = 1 / (1 - discount_factor)
         ax.axhline(divergence_level, linestyle='--', color='black', linewidth=3)
         ax.set_yscale('log')
-        ylabel = 'Maximum |Q| values (log scale)'
+        ylabel = 'Maximum |Q| Values (log scale)'
     elif mode == 'reward':
         ylabel = 'Returns'
     ax.set_xlabel(None)
@@ -177,7 +177,7 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
         ax.set_yscale("log")
     ax.axhline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=3)
     ax.set_xlabel("Episodes")
-    ax.set_ylabel("Maximum Q Values (log scale)")
+    ax.set_ylabel("Maximum |Q| Values (log scale)")
     plt.legend()
     if save_path:
         fig.savefig(save_path)
@@ -199,7 +199,7 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
         # mean_qs = np.mean(qs, axis=0)
         ax.scatter(qs, rewards, marker=markers[i], label=exp_setting, alpha=0.7)
     ax.axvline(1 / (1 - discount_factor), linestyle='--', color='black', linewidth=1)
-    ax.set_xlabel("Maximum Q Values")
+    ax.set_xlabel("Maximum |Q| Values")
     ax.set_ylabel("Average Returns per Episode")
     plt.legend()
     plt.tight_layout()

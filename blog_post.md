@@ -210,7 +210,6 @@ We first discuss the obtained results for each environment separately, from whic
 </div> -->
 
 <!--- TODO: add titles to the plots, identifying the experiment -->
-<!--- TODO: rename 'Average Rewards per Episode' to 'Average Return' -->
 <!--- TODO: rename 'Maximum Q values' to 'Maximum Absolute Q value' -->
 
 To begin with, let's look at the Mountain Car results below.
