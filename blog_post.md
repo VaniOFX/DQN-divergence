@@ -153,7 +153,7 @@ We thus compare 4 different setups for each environment: without tricks (vanilla
 We run each experiment with 25 different random seeds to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value predicted in any of the last 20 episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
 <!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
 
-Even though the original paper uses a convolutional neural network to play Atari games, we limit ourselves to simpler environments so that we can use a fully-connected neural network with a single layer of size 128. We pick the classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control).
+Even though the original paper uses a convolutional neural network to play Atari games, we limit ourselves to simpler environments given computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128.**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control).
 
 ### [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
 ![cartpole](img/cartpole.gif)
@@ -305,4 +305,3 @@ understood that netither of tricks is useful without the clipping in the simple 
 
 
 **Footnotes**
-
