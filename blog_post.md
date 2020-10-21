@@ -165,7 +165,7 @@ The agent tries to swing up a two-link robot arm above the base by applying a cl
 
 ### [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
 ![mountaincar](img/mountaincar.gif)
-The agent starts a car at the bottom of a valley and tries to drive it up the right hill. However, the car's engine is not strong enough to do so in a single pass. Instead it has to go back and forth between the left and right hill to build momentum. This problem is quite challenging. We pick this as a representative of problems with high-level difficulty.
+In the Mountain Car environment, the agent starts a car at the bottom of a valley and tries to drive it up the right hill. However, the car's engine is not strong enough to do so in a single pass. Instead it has to go back and forth between the left and right hill to build momentum. This problem is quite challenging, so we choose it as a representative of problems with high-level difficulty.
 
 We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. The loss term we use is the mean-squared error (MSE). Clipping it between $$[-1, 1]$$ has been reported to improve the training stability of DQN and we use it for all environments except Cart Pole, which yields better results without doing it.  The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
