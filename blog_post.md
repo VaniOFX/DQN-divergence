@@ -161,7 +161,7 @@ In the Cart Pole environment, the agent tries to balance a pole on a cart by app
 
 ### [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
 ![acrobot](img/acrobot.gif)
-The agent tries to swing up a two-link robot arm above the base by applying a clockwise or anti-clockwise torque. This problem is more difficult than the previous one. We select this as a representative of problems with mid-level difficulty.
+In the Acrobot environment, the agent tries to swing up a two-link robot arm above the base by applying a clockwise or anti-clockwise torque. This problem is considered more difficult than the previous one, so we select it as a representative of problems with mid-level difficulty.
 
 ### [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
 ![mountaincar](img/mountaincar.gif)
