@@ -153,7 +153,19 @@ We thus compare 4 different setups for each environment: without tricks (vanilla
 We run each experiment with 25 different random seeds to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value predicted in any of the last 20 episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
 <!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
 
-Even though the original paper uses a convolutional neural network to play Atari games, we focus on the simpler and less computationally expensive [Cart Pole](https://gym.openai.com/envs/CartPole-v1/), [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/) and [Acrobot](https://gym.openai.com/envs/Acrobot-v1/) (from [OpenAI gym](https://gym.openai.com/)). Our model is a single-layer fully-connected network with a hidden layer of size 128. 
+Even though the original paper uses a convolutional neural network to play Atari games, we limit ourselves to simpler environments given computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128.**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control).
+
+### [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
+![cartpole](img/cartpole.gif)
+In the Cart Pole environment, the agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent receives a reward of +1. Since his problem is considered relatively easy to solve. we chose it as a representative of problems with low difficulty.
+
+### [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
+![acrobot](img/acrobot.gif)
+In the Acrobot environment, the agent tries to swing up a two-link robot arm above the base by applying a clockwise or anti-clockwise torque. This problem is considered more difficult than the previous one, so we select it as a representative of problems with mid-level difficulty.
+
+### [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
+![mountaincar](img/mountaincar.gif)
+In the Mountain Car environment, the agent starts a car at the bottom of a valley and tries to drive it up the right hill. However, the car's engine is not strong enough to do so in a single pass. Instead it has to go back and forth between the left and right hill to build momentum. This problem is quite challenging, so we choose it as a representative of problems with high-level difficulty.
 
 We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. The loss term we use is the mean-squared error (MSE). Clipping it between $$[-1, 1]$$ has been reported to improve the training stability of DQN and we use it for all environments except Cart Pole, which yields better results without doing it.  The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
@@ -293,4 +305,3 @@ understood that netither of tricks is useful without the clipping in the simple 
 
 
 **Footnotes**
-
