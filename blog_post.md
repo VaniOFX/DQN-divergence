@@ -157,7 +157,7 @@ Even though the original paper uses a convolutional neural network to play Atari
 
 ### [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
 ![cartpole](img/cartpole.gif)
-The agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent recieves a reward of +1. This problem is very easy to solve. Therefore, we chose this as a representative of problems with low-level difficulty.
+In the Cart Pole environment, the agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent receives a reward of +1. Since his problem is considered relatively easy to solve. we chose it as a representative of problems with low difficulty.
 
 ### [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
 ![acrobot](img/acrobot.gif)
