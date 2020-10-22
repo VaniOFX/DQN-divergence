@@ -147,31 +147,32 @@ where the last equality is a general result for geometric series. This means tha
 
 ## Experimental setup
 
-Since divergence can now be quantified, we use it as a metric to compare which algorithms exhibit more divergence than others. **We say an algorithm exhibits more divergence if the fraction of runs in which soft divergence occurs is higher.** We refer to Memory Replay and Target Networks as DQN's "tricks". The improvement that each of the tricks brings to DQN is measured against the **baseline** model, DQN without tricks, or *vanilla* DQN.
-We thus compare 4 different setups for each environment: without tricks (vanilla agent), with Memory Replay (memory agent), with target networks (target agent), and with both tricks (DQN / memory+target agent).
+We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. Even though the authors use a convolutional neural network to play Atari games, we limit ourselves to simpler environments given computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control):
 
-We run each experiment with 25 different random seeds to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value predicted in any of the last 20 episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
-<!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
-
-Even though the original paper uses a convolutional neural network to play Atari games, we limit ourselves to simpler environments given computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128.**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control).
-
-### [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
+### Environment 1: [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
 ![cartpole](img/cartpole.gif)
 In the Cart Pole environment, the agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent receives a reward of +1. Since his problem is considered relatively easy to solve. we chose it as a representative of problems with low difficulty.
 
-### [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
+### Environment 2: [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
 ![acrobot](img/acrobot.gif)
 In the Acrobot environment, the agent tries to swing up a two-link robot arm above the base by applying a clockwise or anti-clockwise torque. This problem is considered more difficult than the previous one, so we select it as a representative of problems with mid-level difficulty.
 
-### [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
+### Environment 3: [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
 ![mountaincar](img/mountaincar.gif)
 In the Mountain Car environment, the agent starts a car at the bottom of a valley and tries to drive it up the right hill. However, the car's engine is not strong enough to do so in a single pass. Instead it has to go back and forth between the left and right hill to build momentum. This problem is quite challenging, so we choose it as a representative of problems with high-level difficulty.
 
-We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. The loss term we use is the mean-squared error (MSE). Clipping it between $$[-1, 1]$$ has been reported to improve the training stability of DQN and we use it for all environments except Cart Pole, which yields better results without doing it.  The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
+### Experiments and hyperparameters
+Since divergence can now be quantified, we use it as a metric to compare which algorithms exhibit more divergence than others. **We say an algorithm exhibits more divergence if the fraction of runs in which soft divergence occurs is higher.** We refer to Memory Replay and Target Networks as DQN's "tricks". The improvement that each of the tricks brings to DQN is measured against the **baseline** model, DQN without tricks, or *vanilla* DQN.
+*We thus compare 4 different setups for each environment*: without tricks (vanilla agent), with Memory Replay (memory agent), with target networks (target agent), and with both tricks (DQN / memory+target agent).
 
-All the experiments are run for 700 episodes which has been found to be enough for the agents to learn to win the games. For better exploration, we use an $$\epsilon$$-greedy strategy, which we linearly anneal from 1 to a minimum of 0.1 during the first 400 episodes, and keep it fixed after. The discount factor is fixed to 0.99 for all the environments.
+We run each experiment with **random seeds from 1 to 25** to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value, predicted in any of the last 20 training episodes, is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
+<!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
 
-Another hyperparameter is the frequency of updates for the target network (whenever the technique is used) and we empirically find 400, 2000, 2000 to work well for Mountain Car, Cart Pole and Acrobot respectively. No extensive hyperparameter search has been executed since the focus of our work is not SOTA performance but to compare the importance of the methods instead. The values of the parameters are selected manually for the configuration with no tricks and kept fixed for all other configurations of the respective environment.
+All the agents are **trained for 700 episodes** which we found to be enough for them to learn to win the games. For better exploration, we use an **$$\epsilon$$-greedy** strategy which is **linearly annealed from 1 to 0.1 during the first 400 episodes**, and keep it fixed after. The discount factor is **$$\gamma = 0.99$$** for all the environments.
+
+Another hyperparameter is the **frequency of target network updates** (whenever the technique is used) and we empirically find **400, 2000, 2000** to work well for **Mountain Car, Cart Pole and Acrobot respectively** (environments are described below). No extensive hyperparameter search has been executed since the focus of our work is not state-of-the-art performance but to compare the importance of the methods instead. The values of **the parameters are selected manually for the configuration with no tricks** and kept fixed for all other configurations of the respective environment.
+
+Similar to the original paper, we use the **mean-squared error (MSE)**. Clipping it between $$[-1, 1]$$ has been reported to improve the training stability of DQN and we do it for all environments except Cart Pole, which yields better results without it. The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a learning rate $$\alpha = 0.001$$. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
 
 <!--- - Evaluating the different techniques
