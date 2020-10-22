@@ -233,10 +233,10 @@ Specifically **for the runs where the memory agent does not diverge, it actually
 This is an interesting observation, as it suggests that our measure of divergence is indeed predictive of final performance for this environment.
 
 The target agent has managed to eliminate divergence completely, but the policy it learns is poor. **Not diverging is clearly not a guarantee for good performance.**
-As expected, the network with both tricks enabled, the DQN agent, performs best. 
+As one would expect, the network with both tricks enabled performs best. 
 It does not diverge and consistently achieves high rewards.
 However, even the DQN agent has runs on which it doesn't learn anything.
-This goes to show that the Mountain Car problem is inherently quite a difficult problem. 
+This goes to show that out of the tasks we explore, Mountain Car is relatively difficult.
 
 ### Acrobot
 
@@ -264,7 +264,7 @@ Once more, using both tricks controls soft divergence and allows learning good p
 
 ### Putting Things into Perspective
 
-Let's put all results so far into perspective.
+So what did we learn from our experiments?
 In each of the three environments we explore, the **vanilla agent (soft) diverges every single time.
 The target network trick significantly helps in reducing this divergence** as well as the variance of the max |$$Q$$|.
 In fact, not a single run diverged when making use of a target network.
@@ -280,10 +280,10 @@ This is made especially clear by the below figure, which zooms in on the distrib
 
 **For the Acrobot environment, the memory agent is able to learn good policies even when it shows divergence. The same holds for the memory and vanilla agents in the Cart Pole environment.** This contrasts the findings in the Mountain Car environment, where the memory agent only learns a good policy when it doesn't diverge. It appears that divergence has a larger impact on performance for some environments than for others. There are many possible explanations for this, among which:
 
-- We hypothesize that the **difficulty of a task** is an important factor in this process. In the simplest environment, Cart Pole, divergence doesn't seem to be an issue in terms of performance. In the harder environments,we however, divergence does seem to affect the quality of the policies. In Acrobot, the variance of the memory agent is very high, and its performance is lower compared to the DQN agent as well. **In the Mountain Car environment, the agent didn't manage to learn anything for every single run that diverged.** It might be that as the task grows more difficult, having accurate Q value estimates becomes more important.
+- We hypothesize that the **difficulty of a task** is an important factor in this process. In the simplest environment, Cart Pole, divergence doesn't seem to be an issue in terms of performance. In the harder environments,we however, divergence does seem to affect the quality of the policies. In Acrobot, the variance of the memory agent is very high, and its performance is lower compared to the DQN agent as well. **In the Mountain Car environment, the agent didn't manage to learn anything for every single run that diverged.** It might be that as the task grows more difficult, not diverging becomes more important.
 - Another possibility is that our proxy metric for measuring divergence, max \|$$Q$$\|, is too noisy. It is calculated by keeping track over this quantity for each update transition encountered during the last 20 episodes. **Taking the maximum is not robust to outliers**. If a single high value is encountered in one state, while most of the states are well behaved, this may give a very skewed picture of the divergence in training run.
 
-Another important insight is that **adding memory replay improves performance in all our experiments**. The target agent is always improved by adding the memory replay mechanism (resulting in the DQN agent). This corroborates the findings of the original DQN paper, which say that memory replay leads to better a realization of the i.i.d. data assumption, subsequently allowing gradient descent to find a better optimum.
+Another important insight is that **adding memory replay improves performance in all our experiments**. The target agent is always improved by adding the memory replay mechanism (resulting in the DQN agent). This corroborates the findings of the original DQN paper, which say that memory replay leads to a better realization of the i.i.d. data assumption, subsequently allowing gradient descent to find a better optimum.
 
 **In short, target networks prevent divergence in the learning process. While memory replay does not prevent divergence, it is an important technique that guides the search towards good policies. Combining both tricks gives us the best of both worlds — a controlled divergence setup with good Q-value estimates.**
 
