@@ -154,7 +154,7 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(10,1
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     ax.grid(axis='y')
-    ax.set_title(environment[:-3])
+    ax.set_title(environment[:-3], fontsize=50)
     ax.tick_params(axis='x', labelsize=15)
     if save_path is not None:
         plt.savefig(save_path)
