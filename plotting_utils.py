@@ -154,6 +154,7 @@ def make_violinplots(data, discount_factor=None, environment=None, figsize=(10,1
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     ax.grid(axis='y')
+    ax.set_title(environment[:-3])
     ax.tick_params(axis='x', labelsize=15)
     if save_path is not None:
         plt.savefig(save_path)
@@ -184,7 +185,7 @@ def plot_q_values(data, discount_factor, figsize=(15,10), save_path=None):
     else:
         plt.show()
 
-def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
+def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None, environment=None):
     """ Plot the maximum Q values against rewards for all tricks """
     # plt.style.use("seaborn-talk")
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
@@ -203,6 +204,7 @@ def plot_rewards_qs(data, discount_factor, figsize=(7,7), save_path=None):
     ax.set_ylabel("Average Returns per Episode")
     plt.legend()
     plt.tight_layout()
+    # ax.set_title(environment[:-3])
     if save_path:
         fig.savefig(save_path)
     else:
@@ -233,8 +235,8 @@ if __name__ == "__main__":
     elif args.reward_q_values:
         logs = load_experiment_results(read_log=True)
         rewards_qs = iterate_results(logs, extract_fn=extract_reward_max_q)
-        plot_rewards_qs(rewards_qs[environment], discount_factor=args.discount, save_path=f"{environment}_rewards_q_values.png")
-        pass
+        plot_rewards_qs(rewards_qs[environment], discount_factor=args.discount,
+                        save_path=f"{environment}_rewards_q_values.png", environment=environment)
     else:
         mode = 'reward' if args.reward else 'q_divergence'
         if mode == 'reward':
