@@ -1,9 +1,10 @@
+*By [Emil Dudev](https://github.com/edudev/), [Aman Hussain](https://github.com/AmanDaVinci), [Omar Elbaghdadi](https://omarelb.github.io), and [Ivan Bardarov](https://www.linkedin.com/in/ivan-bardarov).*
 
 Deep Q Networks (DQN) revolutionized the Reinforcement Learning world. It was the first algorithm able to learn a successful strategy in a complex environment immediately from high-dimensional image inputs. In this blog post, we investigate how some of the techniques introduced in the original paper contributed to its success. Specifically, we investigate to what extent **memory replay** and **target networks** help prevent **divergence** in the learning process. 
 
 <!--more-->
 
-Reinforcement Learning (RL) has already been around for a while, but it is not even close to being solved yet. While *supervised learning* can already be quite difficult, RL methods also need to deal with changes in the data distribution, huge state spaces, partial observability, and various other issues. In 2013, the paper [Playing Atari with Deep Reinforcement Learning (Mnih et al.)](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) introduces **DQN, the first RL method to successfully learn good policies directly from high-dimensional inputs using neural networks**. The algorithm performs better than human experts in several Atari games, learning directly from image input.
+Reinforcement Learning (RL) has already been around for a while, but it is not even close to being solved yet. While *supervised learning* can already be quite difficult, RL methods also need to deal with changes in the data distribution, huge state spaces, partial observability, and various other challenges. In 2013, the paper [Playing Atari with Deep Reinforcement Learning (Mnih et al.)](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) introduces **DQN, the first RL method to successfully learn good policies directly from high-dimensional inputs using neural networks**. The algorithm performs better than human experts in several Atari games, learning directly from image input.
 
 <!--- ![pic alt]({{page.img_dir}}space_invaders_games_2.png "opt title") -->
 {% capture newpath %}{{ page.img_dir }}{{ "space_invaders_games_2.png" }}{% endcapture %} 
@@ -12,10 +13,10 @@ Screenshots from three Atari 2600 Games: (Left-to-right) Pong, Breakout, and Spa
 {% endcapture %} 
 {% include figure.html src=newpath caption=caption %}
 
-The DQN authors improve on DQN in their [2015 paper](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf), introducing additional techniques to stabilize the learning process. In this post, we take a look at the two key innovations of DQN, **memory replay** and **target networks**. We run our own experiments, investigating to what degree each of these techniques helps avoid **divergence** in the learning process. When divergence occurs, the quality of the learned strategy has a high chance of being destroyed, which we want to avoid. Studying the conditions of divergence also allows us to get a better insight into the learning dynamics of Q-learning with neural network function approximation.
+The DQN authors improve on DQN in their [2015 paper](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf), introducing additional techniques to stabilize the learning process. In this post, we take a look at the two key innovations of DQN, **memory replay** and **target networks**. We run our own experiments, investigating to what degree each of these techniques helps avoid **divergence** in the learning process. When divergence occurs, the quality of the learned strategy has a high chance of being destroyed, which we want to avoid. Studying the conditions of divergence also allows us to get a better insight into the learning dynamics of $$Q$$-learning with neural network function approximation.
 
 The rest of this post is outlined as follows:
-- We first develop a little bit of the **background**, briefly going into RL, Q-Learning, function approximation with neural networks, and the DQN algorithm.
+- We first develop a little bit of the **background**, briefly going into RL, $$Q$$-learning, function approximation with neural networks, and the DQN algorithm.
 - We then give a definition of **divergence**, which we use in our experiments.
 - We describe the **experimental setup**,
 - after which we **discuss** the results.
@@ -56,7 +57,7 @@ $$
 
 The expectation is with respect to $$\pi$$, since it determines (along with the environment) which states are visited, and in turn which rewards are obtained.
 
-### $$Q$$-Learning
+### Q-Learning
 
 If we can learn these $$Q$$-values, we know which actions yield the best returns, allowing us to optimize our policy. One technique based on this principle is **$$Q$$-Learning**. In $$Q$$-learning, we learn the optimal $$Q$$-values directly from experienced environment transitions $$(s, a, r, s')$$, where $$s'$$ is the state following $$s$$ after taking action $$a$$. The following update rule is used:
 
@@ -125,7 +126,7 @@ To tackle this problem, DQN proposes using a **target network**. The idea is to 
 
 ## Divergence
 
-Our goal was to find out to what extent the two techniques mentioned above help dealing with divergence in the learning process. Divergence occurs when the $$Q$$-function approximator learns unrealistically high values for state-action pairs, in turn destroying the quality of the greedy control policy derived from $$Q$$ [(Van Hasselt et al.)](http://arxiv.org/abs/1812.02648).
+Our goal is to find out to what extent the two techniques mentioned above help dealing with divergence in the learning process. Divergence occurs when the $$Q$$-function approximator learns unrealistically high values for state-action pairs, in turn destroying the quality of the greedy control policy derived from $$Q$$ [(Van Hasselt et al.)](http://arxiv.org/abs/1812.02648).
 
 For most environments, we don't know the true Q-values. How do we know when divergence occurs then? [Van Hasselt et al.](http://arxiv.org/abs/1812.02648) use a clever trick to define **soft divergence**, a proxy for divergence. To avoid instability, DQN clips all rewards to the range $$[-1, 1]$$. Thus, the future return at some state is bounded by:
 
@@ -147,33 +148,39 @@ where the last equality is a general result for geometric series. This means tha
 
 ## Experimental setup
 
-We try to follow the experimental setup from the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. Even though the authors use a convolutional neural network to play Atari games, we limit ourselves to simpler environments given computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control):
+We try to follow the experimental setup of the [DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) wherever possible. Even though the authors use a convolutional neural network to play Atari games, we limit ourselves to a simpler architecture given our computation and time constraints. We use a **fully-connected** neural network with **a single hidden layer (excluding input and output layers) of size 128**, mapping from input states to a discrete set of actions. We use **ReLU** activation functions at each layer before the output layer.
+
+Given our constraints, we only look at relatively simple, computationally inexpensive environments. **We explore three environments**, so that our results are not specific to any one of them. Each environment is chosen to be of a different (estimated) difficulty, as we consider this an important distinction in our context. We consider classical control theory environments made available by [OpenAI gym](https://gym.openai.com/envs/#classic_control):
 
 ### Environment 1: [Cart Pole](https://gym.openai.com/envs/CartPole-v1/)
-![cartpole](img/cartpole.gif)
-In the Cart Pole environment, the agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent receives a reward of +1. Since his problem is considered relatively easy to solve, we chose it as a representative of problems with low difficulty.
+![cartpole]({{page.img_dir}}cartpole.gif)
+
+In the Cart Pole environment, the agent tries to balance a pole on a cart by applying a rightward or a leftward force. For every time step the pole remains upright (less than 15 degrees from vertical), the agent receives a reward of +1. Since his problem is considered relatively easy to solve. we chose it as a representative of problems with low difficulty.
 
 ### Environment 2: [Acrobot](https://gym.openai.com/envs/Acrobot-v1/)
-![acrobot](img/acrobot.gif)
+![acrobot]({{page.img_dir}}acrobot.gif)
+
 In the Acrobot environment, the agent tries to swing up a two-link robot arm above the base by applying a clockwise or anti-clockwise torque. This problem is considered more difficult than the previous one, so we select it as a representative of problems with mid-level difficulty.
 
 ### Environment 3: [Mountain Car](https://gym.openai.com/envs/MountainCar-v0/)
-![mountaincar](img/mountaincar.gif)
+![mountaincar]({{page.img_dir}}mountaincar.gif)
+
 In the Mountain Car environment, the agent starts a car at the bottom of a valley and tries to drive it up the right hill. However, the car's engine is not strong enough to do so in a single pass. Instead it has to go back and forth between the left and right hill to build momentum. This problem is quite challenging, so we choose it as a representative of problems with high-level difficulty.
 
 ### Experiments and hyperparameters
 Since divergence can now be quantified, we use it as a metric to compare which algorithms exhibit more divergence than others. **We say an algorithm exhibits more divergence if the fraction of runs in which soft divergence occurs is higher.** We refer to Memory Replay and Target Networks as DQN's "tricks". The improvement that each of the tricks brings to DQN is measured against the **baseline** model, DQN without tricks, or *vanilla* DQN.
 *We thus compare 4 different setups for each environment*: without tricks (vanilla agent), with Memory Replay (memory agent), with target networks (target agent), and with both tricks (DQN / memory+target agent).
 
-We run each experiment with **random seeds from 1 to 25** to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value, predicted in any of the last 20 training episodes, is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
+We run each experiment with **random seeds from 1 to 25** to achieve more statistically sound results, while taking into account our computational budget. If the maximal absolute Q-value in any of the last 20 training episodes is above the threshold $$\frac{1}{1-\gamma}$$, we say soft divergence occurs. 
 <!--- At the end, we compare the configurations by counting how many times each of them has diverged. -->
 
-All the agents are **trained for 700 episodes** which we found to be enough for them to learn to win the games. For better exploration, we use an **$$\epsilon$$-greedy** strategy which is **linearly annealed from 1 to 0.1 during the first 400 episodes**, and kept fixed after. The **discount factor is $$\boldsymbol{\gamma = 0.99}$$** for all the environments.
+All the agents are **trained for 700 episodes** which we found to be enough for them to learn to win the games. For better exploration, we use an **$$\epsilon$$-greedy** strategy which is **linearly annealed from 1 to 0.1 during the first 400 episodes**, and kept fixed after. The discount factor is **$$\gamma = 0.99$$** for all the environments.
 
-Another hyperparameter is the **frequency of target network updates** (whenever the technique is used) and we empirically find **400, 2000, 2000** to work well for **Mountain Car, Cart Pole and Acrobot respectively**. No extensive hyperparameter search has been executed since the focus of our work is not state-of-the-art performance but to compare the importance of the methods instead. The values of **the parameters are selected manually for the configuration with no tricks** and kept fixed for all other configurations of the respective environment.
+Another hyperparameter is the **frequency of target network updates** (whenever the technique is used). We empirically find **400, 2000, 2000** to work well for **Mountain Car, Cart Pole and Acrobot respectively**. No extensive hyperparameter search has been done since the focus of our work is not state-of-the-art performance, but to compare the importance of the tricks. The values of **the parameters are selected manually for the configuration with no tricks** and kept fixed for all other configurations of the respective environment.
 
-Similar to the original paper, we use the **mean-squared error (MSE)** loss between the predicted and bootstrap $$Q$$-values. Clipping the loss between $$[-1, 1]$$ has been reported to improve the training stability of DQN. We do this for all environments except Cart Pole, which yields better results without the clipping. The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a **learning rate $$\alpha = 0.001$$**. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
+Similar to the original paper, we use the **mean-squared error (MSE)** loss between the predicted and bootstrap $$Q$$-values. Clipping the loss between $$[-1, 1]$$ has been reported to improve the training stability of DQN. We do this for all environments except Cart Pole, which achieves better results without the clipping. The error is optimized by [Adam](https://arxiv.org/pdf/1412.6980.pdf) with a **learning rate $$\alpha = 0.001$$**. The choice of optimizer deviates from the original paper but has shown great success in deep learning recently. Additional experiments with different values of the learning rate and the contribution of error clipping are left for future work.
 
+*The code used in all our experiments [can be found on Github](https://github.com/VaniOFX/DQN-divergence).*
 
 <!--- - Evaluating the different techniques
     - how we evaluate the techniques
@@ -270,14 +277,13 @@ In each of the three environments we explore, the **vanilla agent (soft) diverge
 The target network trick significantly helps in reducing this divergence** as well as the variance of the max |$$Q$$|.
 In fact, not a single run diverged when making use of a target network.
 **Without the target network, divergence seems almost inevitable.**
-This is made especially clear by the below figure, which zooms in on the distributions of the max |$$Q$$| (in log scale).
+This is made especially clear by the below figure, which zooms in on the distributions of the max |$$Q$$| (in log scale). The dotted line indicates the soft divergence threshold.
 
-<div style="display: flex; width: 100%;">
+<div style="display: flex; width: 100%; margin-bottom: 1cm;">
   <img style="width:33%;" src="{{page.img_dir}}violinplot_q_divergence_MountainCar-v0_0.99.png">
   <img style="width:33%;" src="{{page.img_dir}}violinplot_q_divergence_Acrobot-v1_0.99.png">
   <img style="width:33%;" src="{{page.img_dir}}violinplot_q_divergence_CartPole-v1_0.99_no_error_clamping.png">
 </div>
-
 
 **For the Acrobot environment, the memory agent is able to learn good policies even when it shows divergence. The same holds for the memory and vanilla agents in the Cart Pole environment.** This contrasts the findings in the Mountain Car environment, where the memory agent only learns a good policy when it doesn't diverge. It appears that divergence has a larger impact on performance for some environments than for others. There are many possible explanations for this, among which:
 
