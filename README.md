@@ -44,7 +44,7 @@ log_freq: 20
 
 These can easily be changed via the command line, and a search space of different parameters can also be explored:
 ```
-$ python ./dqn.py discount_factor=0.99 use_target_net=False,True update_target_freq=2000 sample_memory=False,True num_episodes=700 env="Acrobot-v1" seed=24,23,22,21,20,19,18,17
+$ python ./dqn.py --multirun discount_factor=0.99 use_target_net=False,True update_target_freq=2000 sample_memory=False,True num_episodes=700 env="Acrobot-v1" seed=24,23,22,21,20,19,18,17
 ```
 
 Each experiment will result in a new subdirectory to be created under `./experiments/`.
